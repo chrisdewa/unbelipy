@@ -30,13 +30,13 @@ client = UnbeliClient(token=TOKEN)
 async def main():
     # get guild information
     guild_info = await client.get_guild(guild_id=305129477627969547)
-    
+    print(guild_info)
     # get guild leaderboard
     guild_leaderboard = await client.get_leaderboard(guild_id=305129477627969547)
-    
+    print(guild_leaderboard)
     # get user balance
     balance = await client.get_balance(guild_id=305129477627969547, member_id=80821761460928512)
-    
+    print(balance)
     # put balance (set to x amount)
     balance = await client.set_balance(guild_id=305129477627969547, 
                                        member_id=80821761460928512,
@@ -47,6 +47,9 @@ async def main():
                                        member_id=80821761460928512,
                                        cash=-500,
                                        reason="Showing off patch method")
+    print(balance)
+
+asyncio.run(main())
 ```
 
 "balance" is a returned Dataclass with balance information containing:
