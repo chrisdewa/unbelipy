@@ -25,6 +25,7 @@ class Balance:
         cash: amount in cash
         user_id: id of the user for which the amount is set
         guild_id: id for the guild the user belongs to
+        rank: rank of the user in the guild according to query parameters
     Comparisons:
         Comparisons are made only with "total"
         Supported operations:
@@ -71,11 +72,11 @@ class UnbGuild:
     Dataclass with guild information. 
     Comparisons are made only with member_count
     """
-    name: str = field(compare=False)
     id: int = field(compare=False)
+    name: str = field(compare=False)
+    icon: str = field(compare=False)
     owner_id: int = field(compare=False)
     member_count: int
-    icon: str = field(compare=False)
     symbol: str = field(compare=False)
     channels: List[Any] = field(compare=False, default_factory=[])
     roles: List[Any] = field(compare=False, default_factory=[])
