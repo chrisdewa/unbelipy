@@ -83,7 +83,7 @@ class UnbGuild:
 
     def __post_init__(self):
         self.id = int(self.id)
-        self.owner_id = int(self.id)
+        self.owner_id = int(self.owner_id)
 
 
 def _dict_to_bal(bal_dict: dict) -> Balance:
