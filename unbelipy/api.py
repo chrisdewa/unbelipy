@@ -10,7 +10,7 @@ from typing import Union, Dict, List, Any, Optional
 
 from aiohttp import ClientSession, ClientResponse
 
-from unbelipy.errors import *
+from unbelipy.errors import TooManyRequests, NotFound, api_errors, UnknownError
 
 UNB_API_VERSION = 'v1'
 
