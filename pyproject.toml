@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "unbelipy"
+version = "0.0.1a1"
+description = "Asynchronous wrapper for UnbelievaBoat's API written in python"
+keywords=["discord", "discord.py", "discord bot", "UnbelievaBoat"]
+authors = ["chrisdewa <alexdewa@gmail.com>"]
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/chrisdewa/unbelipy"
+classifiers=[
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+]
+packages = [
+    {include = "unbelipy"}
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+[tool.poetry.dev-dependencies]
+"aiohttp" = "^3.7.4.post0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -1,6 +1,8 @@
+[![PyPI status](https://img.shields.io/pypi/status/unbelipy.svg)](https://pypi.python.org/pypi/unbelipy/)
+[![PyPI version fury.io](https://badge.fury.io/py/unbelipy.svg)](https://pypi.python.org/pypi/unbelipy/)
+[![PyPI license](https://img.shields.io/pypi/l/unbelipy.svg)](https://pypi.python.org/pypi/unbelipy/)
 
-
-# unbelipy
+# unbelip
 
 Asynchronous wrapper for UnbelievaBoat's API written in python
 
