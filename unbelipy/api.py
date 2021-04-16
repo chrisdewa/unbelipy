@@ -6,11 +6,13 @@ Module to facilitate integration with UnbelievaBoat's API
 import json
 from dataclasses import dataclass, field
 from datetime import datetime
+from inspect import stack
 from typing import Union, Dict, List, Any, Optional
 
 from aiohttp import ClientSession, ClientResponse
 
 from unbelipy.errors import TooManyRequests, NotFound, api_errors, UnknownError
+from unbelipy.rate_limits import ClientRateLimits
 
 UNB_API_VERSION = 'v1'
 
@@ -129,34 +131,36 @@ class UnbeliClient:
                 404: NotFound
                 429: TooManyRequests,
                 500: InternalServerError
-
-
     """
-    rate_limit_data: Dict[str, Union[str, int, float, datetime, None]] = {
-        'X-RateLimit-Limit': None,
-        'X-RateLimit-Remaining': None,
-        'X-RateLimit-Reset': None,
-        'retry_after': None
-    }
     _base_url = 'https://unbelievaboat.com/api/' + f'{UNB_API_VERSION}'
     _member_url = _base_url + '/guilds/{guild_id}/users/{member_id}'
+
+    rate_limit_data = ClientRateLimits()
 
     def __init__(self, token: str):
         self._header = {'Authorization': token}
 
+    @staticmethod
+    def _get_caller():
+        return stack()[1][3]
+
     async def _balance_from_response(self, response: ClientResponse, guild_id: int):
         """Checks API errors before returning a response object via _dict_to_bal"""
-        if await self._check_response(response):
+        caller = stack()[1][3]
+        if await self._check_response(response, caller=caller):
             data = await response.json()
             data['guild_id'] = guild_id
             return _dict_to_bal(data)
 
-    async def _check_response(self, response: ClientResponse):
+    async def _check_response(self, response: ClientResponse, caller: str):
         """Checks API response for errors. Returns True only on status 200"""
         status = response.status
         reason = response.reason
         data = await response.json()
 
+        bucket = getattr(self.rate_limit_data, caller)
+
+        limits = dict()
         for key in ['X-RateLimit-Limit',
                     'X-RateLimit-Remaining',
                     'X-RateLimit-Reset']:
@@ -165,14 +169,26 @@ class UnbeliClient:
                 value = int(value)
                 if key == 'X-RateLimit-Reset':
                     value = datetime.utcfromtimestamp(value / 1000)
-            self.rate_limit_data[key] = value
+            limits[key] = value
+
         if type(data) is dict:
             retry_after = data.get('retry_after')
             if retry_after is not None:
                 retry_after = int(
                     retry_after) / 1000 + 1  # sometimes following this rate limit still results in 429 so adding 1
-                                             # solves it.
-            self.rate_limit_data['retry_after'] = retry_after
+                # solves it.
+            is_global = data.get('global')
+            if is_global is True:
+                bucket = self.rate_limit_data.global_rates
+                caller = 'global_rates'
+
+            bucket.retry_after = retry_after
+        bucket.bucket = caller
+        bucket.limit = limits.pop('X-RateLimit-Limit')
+        bucket.remaining = limits.pop('X-RateLimit-Remaining')
+        bucket.reset = limits.pop('X-RateLimit-Reset')
+
+        setattr(self.rate_limit_data, caller, bucket)
 
         if status == 200:
             return True
@@ -207,7 +223,7 @@ class UnbeliClient:
         url = f"{self._base_url}/applications/@me/guilds/{guild_id}"
         async with ClientSession(headers=self._header) as cs:
             async with cs.get(url=url) as r:
-                if await self._check_response(r):
+                if await self._check_response(r, caller=self._get_caller()):
                     data = await r.json()
                     return data['permissions']
 
@@ -229,9 +245,10 @@ class UnbeliClient:
             raise TypeError(f"guild_id must be an int but {t} was received")
 
         url = f"{self._base_url}/guilds/{guild_id}"
+
         async with ClientSession(headers=self._header) as cs:
             async with cs.get(url=url) as r:
-                if await self._check_response(r):
+                if await self._check_response(r, caller=self._get_caller()):
                     data = await r.json()
                     return UnbGuild(**data)
 
@@ -359,7 +376,7 @@ class UnbeliClient:
 
         async with ClientSession(headers=self._header) as cs:
             async with cs.get(url=url) as r:
-                if await self._check_response(r):
+                if await self._check_response(r, caller=self._get_caller()):
                     data = await r.json()
                     if page is None:
                         return process_lb(data)
