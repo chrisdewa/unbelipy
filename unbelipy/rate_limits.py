@@ -67,3 +67,6 @@ class ClientRateLimits:
             True if any bucket is being rate limited
         """
         return any(self.currently_limited().values())
+
+    def is_bucket_limited(self, bucket:str):
+        return self.currently_limited().get(bucket) is True

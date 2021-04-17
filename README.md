@@ -70,4 +70,6 @@ asyncio.run(main())
 
 UnbeliClient also has a rate_limit_data attribute with information returned with each request from the API.
 
-
+# Nots:
+- '-Infinity' is accepted by the API as a parameter for cash or bank (edit_balance and set_balance), but it doesn't work.
+- For the moment concurrent operations will still trigger 429 errors, it's still being worked on.

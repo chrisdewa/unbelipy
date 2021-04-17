@@ -2,11 +2,11 @@
 """
 Module to facilitate integration with UnbelievaBoat's API
 """
-
-import json
+from asyncio import sleep as async_sleep
 from dataclasses import dataclass, field
 from datetime import datetime
 from inspect import stack
+from json import dumps
 from typing import Union, Dict, List, Any, Optional
 
 from aiohttp import ClientSession, ClientResponse
@@ -65,7 +65,7 @@ class Balance:
             self.rank = int(self.rank)
 
     def __repr__(self):
-        return f"Balance(total={self.total}, user_id={self.user_id}, guild_id={self.guild_id})"
+        return f"Balance(total={self.total}, rank={self.rank}, user_id={self.user_id}, guild_id={self.guild_id})"
 
 
 @dataclass
@@ -88,12 +88,17 @@ class UnbGuild:
         self.owner_id = int(self.owner_id)
 
 
-def _dict_to_bal(bal_dict: dict) -> Balance:
-    processed = {k: v for k, v in bal_dict.items() if k != 'found'}  # get_balance returns redundant 'found' field
-    return Balance(**processed)
+def _process_bal(bal_dict: dict, guild_id: int):
+    bal_dict['guild_id'] = guild_id
+    bal_dict.pop('found', None)
+    return Balance(**bal_dict)
 
 
-def _check_bal_args(cash, bank, reason):
+def _process_lb(users, guild_id):
+    return [_process_bal(user, guild_id) for user in users]
+
+
+def _check_bal_args(cash, bank, reason) -> bool:
     """Checks types and content of arguments for edit and set balance methods"""
     if cash is None and bank is None:
         raise ValueError('An amount or "Infinity" must be specified for either cash or bank')
@@ -104,7 +109,7 @@ def _check_bal_args(cash, bank, reason):
         else:
             if (t := type(value)) not in [int, str]:
                 raise TypeError(f"{arg} can only be int or str but was {t}")
-            elif t is str and value != 'Infinity':
+            elif t is str and value not in ['Infinity', '-Infinity']:
                 raise ValueError(f'When {arg} is a String "Infinity" is expected but "{value}" was received')
     if (t := type(reason)) is not str:
         raise TypeError(f'Reason can only be str but was "{t}"')
@@ -114,6 +119,10 @@ def _check_bal_args(cash, bank, reason):
 class UnbeliClient:
     """
     Client Class to interact with Unbelievaboat's API
+    Parameters:
+        token: Token for Unbelivaboat's API.
+        prevent_rate_limits: if True client will sleep through rate limits to prevent 429 errors
+        retry_rate_limits: if True client will sleep and retry requests after 429 errors
     Public Attributes:
         rate_limit_data:
             Dictionary containing information on the rate limit status of the client in the API.
@@ -137,20 +146,87 @@ class UnbeliClient:
 
     rate_limit_data = ClientRateLimits()
 
-    def __init__(self, token: str):
+    def __init__(self, token: str,
+                 prevent_rate_limits: bool = True,
+                 retry_rate_limits: bool = False):
         self._header = {'Authorization': token}
+        self.prevent_rate_limits = prevent_rate_limits
+        self.retry_rate_limits = retry_rate_limits
+
+    def __get_member_url(self, guild_id: int, member_id: int):
+        return self._member_url.format(guild_id=guild_id, member_id=member_id)
 
     @staticmethod
     def _get_caller():
-        return stack()[1][3]
+        return stack()[2][3]
 
-    async def _balance_from_response(self, response: ClientResponse, guild_id: int):
-        """Checks API errors before returning a response object via _dict_to_bal"""
-        caller = stack()[1][3]
-        if await self._check_response(response, caller=caller):
-            data = await response.json()
-            data['guild_id'] = guild_id
-            return _dict_to_bal(data)
+    async def _request(self,
+                       method: str,
+                       url: str,
+                       data: Optional[str] = None,
+                       **kwargs
+                       ) -> Union[int,
+                                  Balance,
+                                  UnbGuild,
+                                  Dict[str, Union[List[Balance], str]],
+                                  List[Balance]]:
+        """
+        Processes requests to the Unbelivaboat's API
+        Args:
+            method (str): 'PUT', 'PATCH' or 'GET'
+            url (str): request url
+            data (json str): server data
+            kwargs:
+                guild_id: id (int) of the guild
+                page: int number of page in the case of get_leaderboard
+        """
+        cs = ClientSession(headers=self._header)
+        caller = self._get_caller()
+        guild_id = kwargs.pop('guild_id', None)
+        page = kwargs.pop('page', None)
+
+        if method == 'PUT':
+            request_manager = cs.put(url=url, data=data)
+        elif method == 'PATCH':
+            request_manager = cs.patch(url=url, data=data)
+        else:  # defaults to 'GET'
+            request_manager = cs.get(url=url)
+
+        bucket = getattr(self.rate_limit_data, caller)
+        if self.rate_limit_data.is_bucket_limited('gobal_rates') is True:
+            print('is global')
+            bucket = self.rate_limit_data.global_rates
+        if bucket.remaining == 0 and self.prevent_rate_limits is True:
+            now: datetime = datetime.utcnow()
+            reset: Optional[datetime] = bucket.reset
+            if reset and reset > now:
+                timeout = (reset - now).total_seconds() + 2
+                await async_sleep(timeout)
+
+        async with cs:
+            r = await request_manager
+            response_data = await r.json()
+        try:
+            if await self._check_response(response=r, caller=caller):
+                if caller in ['edit_balance', 'set_balance', 'get_balance']:
+                    return _process_bal(response_data, guild_id)
+                elif caller == 'get_leaderboard':
+                    if page is None:
+                        return _process_lb(response_data, guild_id)
+                    else:
+                        response_data['users'] = _process_lb(response_data['users'], guild_id)
+                        return response_data
+                elif caller == 'get_permissions':
+                    return response_data['permissions']
+                elif caller == 'get_guild':
+                    return UnbGuild(**response_data)
+        except TooManyRequests as E:
+            if self.retry_rate_limits is True:
+                timeout = response_data['retry_after'] + 2
+                await async_sleep(timeout)
+                return await self._request(method, url, data, **kwargs)
+            else:
+                raise E
 
     async def _check_response(self, response: ClientResponse, caller: str):
         """Checks API response for errors. Returns True only on status 200"""
@@ -184,9 +260,9 @@ class UnbeliClient:
 
             bucket.retry_after = retry_after
         bucket.bucket = caller
-        bucket.limit = limits.pop('X-RateLimit-Limit')
-        bucket.remaining = limits.pop('X-RateLimit-Remaining')
-        bucket.reset = limits.pop('X-RateLimit-Reset')
+        bucket.limit = limits.pop('X-RateLimit-Limit', None)
+        bucket.remaining = limits.pop('X-RateLimit-Remaining', None)
+        bucket.reset = limits.pop('X-RateLimit-Reset', None)
 
         setattr(self.rate_limit_data, caller, bucket)
 
@@ -210,10 +286,7 @@ class UnbeliClient:
             else:
                 raise UnknownError(error_text)
 
-    def __get_member_url(self, guild_id: int, member_id: int):
-        return self._member_url.format(guild_id=guild_id, member_id=member_id)
-
-    async def guild_permissions(self, guild_id: int) -> int:
+    async def get_permissions(self, guild_id: int) -> int:
         """
         Returns the application's permissions for the guild with specified id
         """
@@ -221,11 +294,7 @@ class UnbeliClient:
             raise TypeError(f"guild_id must be an int but {t} was received")
 
         url = f"{self._base_url}/applications/@me/guilds/{guild_id}"
-        async with ClientSession(headers=self._header) as cs:
-            async with cs.get(url=url) as r:
-                if await self._check_response(r, caller=self._get_caller()):
-                    data = await r.json()
-                    return data['permissions']
+        return await self._request(method='GET', url=url)
 
     async def get_guild(self, guild_id) -> UnbGuild:
         """
@@ -245,88 +314,7 @@ class UnbeliClient:
             raise TypeError(f"guild_id must be an int but {t} was received")
 
         url = f"{self._base_url}/guilds/{guild_id}"
-
-        async with ClientSession(headers=self._header) as cs:
-            async with cs.get(url=url) as r:
-                if await self._check_response(r, caller=self._get_caller()):
-                    data = await r.json()
-                    return UnbGuild(**data)
-
-    async def get_balance(self, guild_id: int, member_id: int) -> Balance:
-        """
-        Args:
-            guild_id: id of the guild the member belongs to
-            member_id: id of the member
-        Returns:
-            balance (Balance) A dataclass containing the member's balance
-        """
-        for arg in (d := {'guild_id': guild_id, 'member_id': member_id}):
-            if (t := type(d[arg])) is not int:
-                raise TypeError(f"{arg} can only be int but was {t}")
-
-        url = self.__get_member_url(guild_id, member_id)
-        async with ClientSession(headers=self._header) as cs:
-            async with cs.get(url) as r:
-                return await self._balance_from_response(r, guild_id)
-
-    async def edit_balance(self,
-                           guild_id: int,
-                           member_id: int,
-                           cash: Union[int, str] = 0,
-                           bank: Union[int, str] = 0,
-                           reason: str = '') -> Balance:
-        """
-        Increase or decrease the Member's balance by a value given in the params.
-        To decrease the balance, provide a negative number.
-
-        Args:
-            guild_id: id of the guild the member belongs to
-            member_id: id of the member
-            cash: Amount to modify the member's cash amount
-            bank: Amount to modify the member's bank amount
-            reason: specifies the reason why the balance was modified
-
-        Returns:
-            balance (Balance) a dataclass containing the information of the newly modified balance for the user.
-
-
-        """
-        url = self.__get_member_url(guild_id, member_id)
-
-        if _check_bal_args(cash, bank, reason):
-            data = {'cash': cash, 'bank': bank, 'reason': reason}
-            async with ClientSession(headers=self._header) as cs:
-                async with cs.patch(url, data=json.dumps(data)) as r:
-                    return await self._balance_from_response(r, guild_id=guild_id)
-
-    async def set_balance(self,
-                          guild_id: int,
-                          member_id: int,
-                          cash: Union[int, str, None] = None,
-                          bank: Union[int, str, None] = None,
-                          reason: str = '') -> Balance:
-        """
-        Set the Member's balance to the given params.
-        Args:
-            guild_id: id of the guild the member belongs to
-            member_id: id of the member
-            cash: sets the member's cash amount
-            bank: sets the member's bank amount
-            reason: specifies the reason why the balance was modified
-        Usage Notes:
-            if cash and/or bank is a string they must be "Infinite".
-            At least cash or bank are needed
-        Returns:
-            balance (Balance) a dataclass containing the information of the newly set balance for the user.
-        """
-
-        url = self.__get_member_url(guild_id, member_id)
-
-        if _check_bal_args(cash, bank, reason):
-            data = {'cash': cash, 'bank': bank, 'reason': reason}
-            async with ClientSession(headers=self._header) as cs:
-                async with cs.put(url, data=json.dumps(data)) as r:
-                    return await self._balance_from_response(r, guild_id)
+        return await self._request(method='GET', url=url)
 
     async def get_leaderboard(self,
                               guild_id: int,
@@ -368,18 +356,76 @@ class UnbeliClient:
                     url += f"{arg}={d[arg]}&"
 
         url = url[:-1]
+        return await self._request(method='GET', url=url, guild_id=guild_id, page=page)
 
-        def process_lb(lb_dict: dict):
-            for user in lb_dict:
-                user['guild_id'] = guild_id
-            return [_dict_to_bal(user) for user in lb_dict]
+    async def get_balance(self, guild_id: int, member_id: int) -> Balance:
+        """
+        Args:
+            guild_id: id of the guild the member belongs to
+            member_id: id of the member
+        Returns:
+            balance (Balance) A dataclass containing the member's balance
+        """
+        for arg in (d := {'guild_id': guild_id, 'member_id': member_id}):
+            if (t := type(d[arg])) is not int:
+                raise TypeError(f"{arg} can only be int but was {t}")
 
-        async with ClientSession(headers=self._header) as cs:
-            async with cs.get(url=url) as r:
-                if await self._check_response(r, caller=self._get_caller()):
-                    data = await r.json()
-                    if page is None:
-                        return process_lb(data)
-                    else:
-                        data['users'] = process_lb(data['users'])
-                        return data
+        url = self.__get_member_url(guild_id, member_id)
+        return await self._request(method='GET', url=url, guild_id=guild_id)
+
+    async def edit_balance(self,
+                           guild_id: int,
+                           member_id: int,
+                           cash: Union[int, str] = 0,
+                           bank: Union[int, str] = 0,
+                           reason: str = '') -> Balance:
+        """
+        Increase or decrease the Member's balance by a value given in the params.
+        To decrease the balance, provide a negative number.
+
+        Args:
+            guild_id: id of the guild the member belongs to
+            member_id: id of the member
+            cash: Amount to modify the member's cash amount
+            bank: Amount to modify the member's bank amount
+            reason: specifies the reason why the balance was modified
+
+        Returns:
+            balance (Balance) a dataclass containing the information of the newly modified balance for the user.
+
+
+        """
+        url = self.__get_member_url(guild_id, member_id)
+
+        if _check_bal_args(cash, bank, reason):
+            data = {'cash': cash, 'bank': bank, 'reason': reason}
+            return await self._request(method='PATCH', url=url,
+                                       data=dumps(data), guild_id=guild_id)
+
+    async def set_balance(self,
+                          guild_id: int,
+                          member_id: int,
+                          cash: Union[int, str, None] = None,
+                          bank: Union[int, str, None] = None,
+                          reason: str = '') -> Balance:
+        """
+        Set the Member's balance to the given params.
+        Args:
+            guild_id: id of the guild the member belongs to
+            member_id: id of the member
+            cash: sets the member's cash amount
+            bank: sets the member's bank amount
+            reason: specifies the reason why the balance was modified
+        Usage Notes:
+            if cash and/or bank is a string they must be "Infinite".
+            At least cash or bank are needed
+        Returns:
+            balance (Balance) a dataclass containing the information of the newly set balance for the user.
+        """
+
+        url = self.__get_member_url(guild_id, member_id)
+
+        if _check_bal_args(cash, bank, reason):
+            data = {'cash': cash, 'bank': bank, 'reason': reason}
+            return await self._request(method='PUT', url=url,
+                                       data=dumps(data), guild_id=guild_id)
