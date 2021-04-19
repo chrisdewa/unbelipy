@@ -2,6 +2,7 @@
 """
 Module to facilitate integration with UnbelievaBoat's API
 """
+from asyncio import Event
 from asyncio import sleep as async_sleep
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -12,7 +13,7 @@ from typing import Union, Dict, List, Any, Optional
 from aiohttp import ClientSession, ClientResponse
 
 from unbelipy.errors import TooManyRequests, NotFound, api_errors, UnknownError
-from unbelipy.rate_limits import ClientRateLimits
+from unbelipy.rate_limits import ClientRateLimits, BucketRateLimit
 
 UNB_API_VERSION = 'v1'
 
@@ -124,7 +125,7 @@ class UnbeliClient:
         prevent_rate_limits: if True client will sleep through rate limits to prevent 429 errors
         retry_rate_limits: if True client will sleep and retry requests after 429 errors
     Public Attributes:
-        rate_limit_data:
+        rate_limits:
             Dictionary containing information on the rate limit status of the client in the API.
                 keys:
                     X-RateLimit-Limit: The number of requests that can be made.
@@ -144,14 +145,15 @@ class UnbeliClient:
     _base_url = 'https://unbelievaboat.com/api/' + f'{UNB_API_VERSION}'
     _member_url = _base_url + '/guilds/{guild_id}/users/{member_id}'
 
-    rate_limit_data = ClientRateLimits()
-
-    def __init__(self, token: str,
+    def __init__(self,
+                 token: str,
                  prevent_rate_limits: bool = True,
                  retry_rate_limits: bool = False):
         self._header = {'Authorization': token}
         self.prevent_rate_limits = prevent_rate_limits
         self.retry_rate_limits = retry_rate_limits
+        self.rate_limits = ClientRateLimits(prevent_rate_limits=prevent_rate_limits)
+        self.rate_limits.prevent_rate_limits = prevent_rate_limits
 
     def __get_member_url(self, guild_id: int, member_id: int):
         return self._member_url.format(guild_id=guild_id, member_id=member_id)
@@ -192,22 +194,18 @@ class UnbeliClient:
         else:  # defaults to 'GET'
             request_manager = cs.get(url=url)
 
-        bucket = getattr(self.rate_limit_data, caller)
-        if self.rate_limit_data.is_bucket_limited('gobal_rates') is True:
-            print('is global')
-            bucket = self.rate_limit_data.global_rates
-        if bucket.remaining == 0 and self.prevent_rate_limits is True:
-            now: datetime = datetime.utcnow()
-            reset: Optional[datetime] = bucket.reset
-            if reset and reset > now:
-                timeout = (reset - now).total_seconds() + 2
-                await async_sleep(timeout)
+        bucket: BucketRateLimit = getattr(self.rate_limits, caller)
 
-        async with cs:
-            r = await request_manager
-            response_data = await r.json()
+        async with self.rate_limits.global_limit:
+            async with bucket:
+                async with cs:
+                    r = await request_manager
+                    response_data = await r.json()
         try:
             if await self._check_response(response=r, caller=caller):
+                if not bucket.first_run_flag.is_set():
+                    bucket.first_run_flag.set()
+
                 if caller in ['edit_balance', 'set_balance', 'get_balance']:
                     return _process_bal(response_data, guild_id)
                 elif caller == 'get_leaderboard':
@@ -222,7 +220,7 @@ class UnbeliClient:
                     return UnbGuild(**response_data)
         except TooManyRequests as E:
             if self.retry_rate_limits is True:
-                timeout = response_data['retry_after'] + 2
+                timeout = response_data['retry_after'] + 3
                 await async_sleep(timeout)
                 return await self._request(method, url, data, **kwargs)
             else:
@@ -234,7 +232,7 @@ class UnbeliClient:
         reason = response.reason
         data = await response.json()
 
-        bucket = getattr(self.rate_limit_data, caller)
+        bucket = getattr(self.rate_limits, caller)
 
         limits = dict()
         for key in ['X-RateLimit-Limit',
@@ -247,24 +245,9 @@ class UnbeliClient:
                     value = datetime.utcfromtimestamp(value / 1000)
             limits[key] = value
 
-        if type(data) is dict:
-            retry_after = data.get('retry_after')
-            if retry_after is not None:
-                retry_after = int(
-                    retry_after) / 1000 + 1  # sometimes following this rate limit still results in 429 so adding 1
-                # solves it.
-            is_global = data.get('global')
-            if is_global is True:
-                bucket = self.rate_limit_data.global_rates
-                caller = 'global_rates'
-
-            bucket.retry_after = retry_after
-        bucket.bucket = caller
         bucket.limit = limits.pop('X-RateLimit-Limit', None)
         bucket.remaining = limits.pop('X-RateLimit-Remaining', None)
         bucket.reset = limits.pop('X-RateLimit-Reset', None)
-
-        setattr(self.rate_limit_data, caller, bucket)
 
         if status == 200:
             return True
@@ -272,13 +255,16 @@ class UnbeliClient:
             message = data['message']
             if 'global' in data:
                 text = f"Global rate limit. {data['message']}"
-            elif 'retry_after' in data:
-                text = f"{message} retry after: {(data['retry_after']) / 1000}s"
+            elif retry_after := data.get('retry_after'):
+                retry_after = int(retry_after) / 1000
+                bucket.retry_after = retry_after
+                setattr(self.rate_limits, caller, bucket)
+                text = f"{message} retry after: {retry_after}s"
             else:
                 text = f"{message}"
-            raise TooManyRequests(text)
+            raise TooManyRequests(text + f', caller: {caller}')
         elif status == 404:
-            raise NotFound(f'Error Code: "{status}" Reason: "{reason}"')
+            raise NotFound(f'Error Code: "{status}" Reason: "{reason}", caller {caller}, url="{response.url}"')
         else:
             error_text = f'Error code: "{status}" Reason: "{reason}"'
             if status in api_errors:
