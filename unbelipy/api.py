@@ -2,7 +2,8 @@
 """
 Module to facilitate integration with UnbelievaBoat's API
 """
-from asyncio import Event
+import asyncio
+from asyncio import Event, Queue
 from asyncio import sleep as async_sleep
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -201,11 +202,9 @@ class UnbeliClient:
                 async with cs:
                     r = await request_manager
                     response_data = await r.json()
+                    no_error_response = await self._check_response(response=r, caller=caller)
         try:
-            if await self._check_response(response=r, caller=caller):
-                if not bucket.first_run_flag.is_set():
-                    bucket.first_run_flag.set()
-
+            if no_error_response:
                 if caller in ['edit_balance', 'set_balance', 'get_balance']:
                     return _process_bal(response_data, guild_id)
                 elif caller == 'get_leaderboard':
@@ -244,7 +243,6 @@ class UnbeliClient:
                 if key == 'X-RateLimit-Reset':
                     value = datetime.utcfromtimestamp(value / 1000)
             limits[key] = value
-
         bucket.limit = limits.pop('X-RateLimit-Limit', None)
         bucket.remaining = limits.pop('X-RateLimit-Remaining', None)
         bucket.reset = limits.pop('X-RateLimit-Reset', None)

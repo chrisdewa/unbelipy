@@ -1,26 +1,27 @@
 import asyncio
-from datetime import datetime, timedelta
+from collections import defaultdict
+from datetime import datetime
 from typing import Dict
 
 from aiolimiter import AsyncLimiter
+
 
 class BucketRateLimit:
     """
     Stores information about rate limits
     """
+    limit = None
+    remaining = None
+    reset = None
+    retry_after = None
+    sem = None
+
     def __init__(self,
                  name: str,
                  prevent_rate_limits: bool
                  ):
         self.name = name
         self.prevent_rate_limits = prevent_rate_limits
-        self.limit = None
-        self.remaining = None
-        self.reset = None
-        self.retry_after = None
-        self.first_run = False
-        self.first_run_flag = asyncio.Event()
-        self.lock = asyncio.Event()
 
     def __repr__(self):
         return (f"RateLimit(bucket={self.name}, limit={self.limit}, remaining={self.remaining}, "
@@ -28,25 +29,27 @@ class BucketRateLimit:
 
     async def __aenter__(self):
         if self.prevent_rate_limits is True:
-            if not self.first_run:
-                self.first_run = True
-                return
-            else:
-                while not self.first_run_flag.is_set():
-                    await asyncio.sleep(0.1)
+            sem_size_dict = defaultdict(lambda: 9, get_balance=5, get_permissions=20)
+            self.sem = self.sem or asyncio.Semaphore(sem_size_dict[self.name], loop=asyncio.get_running_loop())
+            await self.sem.acquire()
 
-                if self.limit is not None:
+            route_offset = defaultdict(lambda: 1.1, get_guild=2, get_permissions=0)
+            route_offset['get_guild'] = 2
+            now = datetime.utcnow()
+            to_wait = ((self.reset or now) - now).total_seconds() + route_offset[self.name]
 
-                    if self.remaining <= self.limit*0.4:
-                        self.lock.set()
-                    while self.lock.is_set():
-                        now = datetime.utcnow()
-                        if now > (self.reset + timedelta(seconds=0.5)):
-                            self.lock.clear()
-                        else:
-                            await asyncio.sleep(0.1)
+            await asyncio.sleep(to_wait)
 
     async def __aexit__(self, *args):
+        if self.prevent_rate_limits:
+            self.sem.release()
+
+
+class AsyncNonLimiter:
+    async def __aenter__(self):
+        pass
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
         pass
 
 
@@ -63,7 +66,8 @@ class ClientRateLimits:
         self.get_leaderboard = BucketRateLimit(name='get_leaderboard', prevent_rate_limits=prevent_rate_limits)
         self.get_guild = BucketRateLimit(name='get_guild', prevent_rate_limits=prevent_rate_limits)
         self.get_permissions = BucketRateLimit(name='get_permissions', prevent_rate_limits=prevent_rate_limits)
-        self.global_limit = AsyncLimiter(15, 2)
+        self.global_limit = AsyncLimiter(15, 2) if prevent_rate_limits is True else AsyncNonLimiter()
+
 
     def __repr__(self):
         limited = self.any_currently_limited()
@@ -90,13 +94,3 @@ class ClientRateLimits:
 
     def is_bucket_limited(self, bucket: str):
         return self.currently_limited().get(bucket) is True
-
-
-
-
-
-
-
-
-
-

@@ -1,3 +1,7 @@
+# 0.0.9a
+- specific route rate limits now managed by semaphore set up after first request
+- probably the last version of alpha
+
 # 0.0.8a
 - client's attribute rate_limit_data is now rate_limits
 - Correcly handles global limit by waiting until cleared. Tested on concurrent spammed tasks. for this it uses [aiolimiter](https://github.com/mjpieters/aiolimiter) 
