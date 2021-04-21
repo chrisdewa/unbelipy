@@ -1,3 +1,9 @@
+# 0.0.1b
+- Finally in beta
+- Improved README
+- Adjusted rate limit prevention parameters
+- Added licence (MIT)
+
 # 0.0.9a
 - specific route rate limits now managed by semaphore set up after first request
 - probably the last version of alpha

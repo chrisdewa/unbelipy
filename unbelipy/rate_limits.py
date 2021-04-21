@@ -21,19 +21,24 @@ class BucketRateLimit:
                  prevent_rate_limits: bool
                  ):
         self.name = name
-        self.prevent_rate_limits = prevent_rate_limits
+        self._prevent_rate_limits = prevent_rate_limits
 
     def __repr__(self):
         return (f"RateLimit(bucket={self.name}, limit={self.limit}, remaining={self.remaining}, "
                 f"reset={self.reset}, retry_after={self.retry_after})")
 
     async def __aenter__(self):
-        if self.prevent_rate_limits is True:
-            sem_size_dict = defaultdict(lambda: 9, get_balance=5, get_permissions=20)
+        if self._prevent_rate_limits is True:
+            sem_size_dict = defaultdict(lambda: 10,
+                                        get_guild=5,
+                                        get_permissions=20)
             self.sem = self.sem or asyncio.Semaphore(sem_size_dict[self.name], loop=asyncio.get_running_loop())
             await self.sem.acquire()
 
-            route_offset = defaultdict(lambda: 1.1, get_guild=2, get_permissions=0)
+            route_offset = defaultdict(lambda: 1.2,
+                                       get_guild=1.5,
+                                       get_permissions=0,
+                                       )
             route_offset['get_guild'] = 2
             now = datetime.utcnow()
             to_wait = ((self.reset or now) - now).total_seconds() + route_offset[self.name]
@@ -41,7 +46,7 @@ class BucketRateLimit:
             await asyncio.sleep(to_wait)
 
     async def __aexit__(self, *args):
-        if self.prevent_rate_limits:
+        if self._prevent_rate_limits:
             self.sem.release()
 
 
@@ -66,11 +71,10 @@ class ClientRateLimits:
         self.get_leaderboard = BucketRateLimit(name='get_leaderboard', prevent_rate_limits=prevent_rate_limits)
         self.get_guild = BucketRateLimit(name='get_guild', prevent_rate_limits=prevent_rate_limits)
         self.get_permissions = BucketRateLimit(name='get_permissions', prevent_rate_limits=prevent_rate_limits)
-        self.global_limit = AsyncLimiter(15, 2) if prevent_rate_limits is True else AsyncNonLimiter()
-
+        self.global_limiter = AsyncLimiter(15, 1.5) if prevent_rate_limits is True else AsyncNonLimiter()
 
     def __repr__(self):
-        limited = self.any_currently_limited()
+        limited = self.any_limited()
         return f"ClientRateLimits(currently_limited={limited})"
 
     def currently_limited(self) -> Dict[str, bool]:
@@ -85,12 +89,12 @@ class ClientRateLimits:
             all_limits[key] = (attr.reset > now and attr.remaining == 0) if attr.reset else False
         return all_limits
 
-    def any_currently_limited(self) -> bool:
+    def any_limited(self) -> bool:
         """
         Returns:
             True if any bucket is being rate limited
         """
         return any(self.currently_limited().values())
 
-    def is_bucket_limited(self, bucket: str):
-        return self.currently_limited().get(bucket) is True
+    def is_limited(self, name: str):
+        return self.currently_limited().get(name) is True

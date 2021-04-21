@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "unbelipy"
-version = "0.0.9a"
+version = "1.0.0b1"
 description = "Asynchronous wrapper for UnbelievaBoat's API written in python"
 keywords=["discord", "discord.py", "discord bot", "UnbelievaBoat"]
 authors = ["chrisdewa <alexdewa@gmail.com>"]
@@ -8,9 +8,9 @@ readme = "README.md"
 license = "MIT"
 repository = "https://github.com/chrisdewa/unbelipy"
 classifiers=[
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
 ]
 packages = [
     {include = "unbelipy"}

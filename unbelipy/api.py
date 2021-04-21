@@ -2,8 +2,7 @@
 """
 Module to facilitate integration with UnbelievaBoat's API
 """
-import asyncio
-from asyncio import Event, Queue
+
 from asyncio import sleep as async_sleep
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -120,7 +119,7 @@ def _check_bal_args(cash, bank, reason) -> bool:
 
 class UnbeliClient:
     """
-    Client Class to interact with Unbelievaboat's API
+    Client to interact with Unbelievaboat's API
     Parameters:
         token: Token for Unbelivaboat's API.
         prevent_rate_limits: if True client will sleep through rate limits to prevent 429 errors
@@ -151,12 +150,11 @@ class UnbeliClient:
                  prevent_rate_limits: bool = True,
                  retry_rate_limits: bool = False):
         self._header = {'Authorization': token}
-        self.prevent_rate_limits = prevent_rate_limits
-        self.retry_rate_limits = retry_rate_limits
+        self._prevent_rate_limits = prevent_rate_limits
+        self._retry_rate_limits = retry_rate_limits
         self.rate_limits = ClientRateLimits(prevent_rate_limits=prevent_rate_limits)
-        self.rate_limits.prevent_rate_limits = prevent_rate_limits
 
-    def __get_member_url(self, guild_id: int, member_id: int):
+    def _get_member_url(self, guild_id: int, member_id: int):
         return self._member_url.format(guild_id=guild_id, member_id=member_id)
 
     @staticmethod
@@ -197,7 +195,7 @@ class UnbeliClient:
 
         bucket: BucketRateLimit = getattr(self.rate_limits, caller)
 
-        async with self.rate_limits.global_limit:
+        async with self.rate_limits.global_limiter:
             async with bucket:
                 async with cs:
                     r = await request_manager
@@ -218,8 +216,8 @@ class UnbeliClient:
                 elif caller == 'get_guild':
                     return UnbGuild(**response_data)
         except TooManyRequests as E:
-            if self.retry_rate_limits is True:
-                timeout = response_data['retry_after'] + 3
+            if self._retry_rate_limits is True:
+                timeout = response_data['retry_after'] + 2
                 await async_sleep(timeout)
                 return await self._request(method, url, data, **kwargs)
             else:
@@ -354,7 +352,7 @@ class UnbeliClient:
             if (t := type(d[arg])) is not int:
                 raise TypeError(f"{arg} can only be int but was {t}")
 
-        url = self.__get_member_url(guild_id, member_id)
+        url = self._get_member_url(guild_id, member_id)
         return await self._request(method='GET', url=url, guild_id=guild_id)
 
     async def edit_balance(self,
@@ -379,7 +377,7 @@ class UnbeliClient:
 
 
         """
-        url = self.__get_member_url(guild_id, member_id)
+        url = self._get_member_url(guild_id, member_id)
 
         if _check_bal_args(cash, bank, reason):
             data = {'cash': cash, 'bank': bank, 'reason': reason}
@@ -407,7 +405,7 @@ class UnbeliClient:
             balance (Balance) a dataclass containing the information of the newly set balance for the user.
         """
 
-        url = self.__get_member_url(guild_id, member_id)
+        url = self._get_member_url(guild_id, member_id)
 
         if _check_bal_args(cash, bank, reason):
             data = {'cash': cash, 'bank': bank, 'reason': reason}

@@ -1,3 +1,5 @@
+[![forthebadge made-with-python](http://ForTheBadge.com/images/badges/made-with-python.svg)](https://www.python.org/)
+
 [![PyPI status](https://img.shields.io/pypi/status/unbelipy.svg)](https://pypi.python.org/pypi/unbelipy/)
 [![PyPI version fury.io](https://badge.fury.io/py/unbelipy.svg)](https://pypi.python.org/pypi/unbelipy/)
 [![PyPI license](https://img.shields.io/pypi/l/unbelipy.svg)](https://pypi.python.org/pypi/unbelipy/)
@@ -6,19 +8,19 @@
 
 Asynchronous wrapper for UnbelievaBoat's API written in python
 
-# Characteristics
+## Characteristics
 - Easy to use
 - Full error handling
-- Type hinted and readable code
+- Type hinted readable code
 
-# Project status
-Early alpha and as such unsuitable for production.
+## Project status
+Early beta may be used in production after extensive testing
 
-# Installation
+## Installation
 
 `pip install unbelipy`
 
-# Use:
+## Use:
 
 ```python
 from unbelipy import UnbeliClient
@@ -68,8 +70,34 @@ asyncio.run(main())
 - member_count  
 - symbol (currency)
 
-UnbeliClient also has a rate_limit_data attribute with information returned with each request from the API.
-
-# Nots:
-- '-Infinity' is accepted by the API as a parameter for cash or bank (edit_balance and set_balance), but it doesn't work.
-- For the moment concurrent operations will still trigger 429 errors, it's still being worked on.
+### UnbeliClient init parameters:
+- `token` unbelivaboat's client token.
+- `prevent_rate_limits` (bool) if enabled (True, the default) the client will do its best 
+  to prevent 429 type errors (rate limits). This will work even on concurrent tasts or loops.
+- `retry_rate_limits` (bool) if enabled (True, default is False) the client will retry requests after 
+  getting a 429 error. It will sleep through the retry_after time stipulated by UnbelivaBoat's API
+  
+### UnbeliClient public attributes
+- `rate_limits`: this class features attributes about the state of each route. They Update after each request. 
+  Bucket Attributes. Each of the following contain an async context manager to prevent 429s in case its enabled and 
+  contain information about the specific route rate limit headers.
+    `rate_limits.get_balance`
+    `rate_limits.edit_balance`
+    `rate_limits.set_balance`
+    `rate_limits.get_leaderboard`
+    `rate_limits.get_guild`
+    `rate_limits.get_permissions`
+  rate limit Methods:
+    `rate_limits.currently_limited()` - returns a dictionary containing the bucket name, and a boolean indicating 
+        if they're currently limited
+    `rate_limits.any_limited()` - returns a bool indicating if any bucket is currently being limited
+    `rate_limits.is_limited(name: str)` - returns a bool indicating if the specified bucket is being limited
+  
+# Know Issues:
+- `'-Infinity'` is accepted by the API as a parameter for cash or bank (edit_balance and set_balance), 
+  but it doesn't work.
+- `client.edit_balace` which sends a patch request sometimes comes back with a 404 error even when 
+  the url and data parameterns are correct, even on repeated requests with the exact same data.
+  
+# Credits
+- Currently global rate limit is handled by Martijn Pieters' [aiolimiter](https://github.com/mjpieters/aiolimiter).
