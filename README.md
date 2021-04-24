@@ -105,4 +105,4 @@ asyncio.run(main())
 
   
 # Credits
-- Currently global rate limit is handled by Martijn Pieters' [aiolimiter](https://github.com/mjpieters/aiolimiter).
+- Currently, global rate limit is handled by Martijn Pieters' [aiolimiter](https://github.com/mjpieters/aiolimiter).
