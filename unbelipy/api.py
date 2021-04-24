@@ -66,7 +66,7 @@ class Balance:
             self.rank = int(self.rank)
 
     def __repr__(self):
-        return f"Balance(total={self.total}, rank={self.rank}, user_id={self.user_id}, guild_id={self.guild_id})"
+        return f"Balance(total={self.total}, cash={self.cash}, bank={self.bank}, rank={self.rank}, user_id={self.user_id}, guild_id={self.guild_id})"
 
 
 @dataclass

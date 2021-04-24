@@ -1,3 +1,8 @@
+# 1.0.1b - 1.0.3b 
+- Documentation improvements
+- Versioning reformatting to follow semantic conventions.
+- Added Balance string representation information.
+
 # 0.0.1b
 - Finally in beta
 - Improved README
