@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "unbelipy"
-version = "1.0.2b"
+version = "1.0.3b"
 description = "Asynchronous wrapper for UnbelievaBoat's API written in python"
 keywords=["discord", "discord.py", "discord bot", "UnbelievaBoat"]
 authors = ["chrisdewa <alexdewa@gmail.com>"]

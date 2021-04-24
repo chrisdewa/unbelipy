@@ -14,7 +14,8 @@ Asynchronous wrapper for UnbelievaBoat's API written in python
 - Type hinted readable code
 
 ## Project status
-Early beta may be used in production after extensive testing
+Early beta. It's not yet production ready. 
+Although most of the functionality is operational rate limits are still being worked on. 
 
 ## Installation
 
@@ -94,10 +95,14 @@ asyncio.run(main())
     `rate_limits.is_limited(name: str)` - returns a bool indicating if the specified bucket is being limited
   
 # Know Issues:
-- `'-Infinity'` is accepted by the API as a parameter for cash or bank (edit_balance and set_balance), 
-  but it doesn't work.
+- `'-Infinity'` is accepted by the API as a parameter for cash or bank (edit_balance and set_balance),
+  but it does not appear to affect the balance. I'm waiting on the devs word on this issue.
 - `client.edit_balace` which sends a patch request sometimes comes back with a 404 error even when 
-  the url and data parameterns are correct, even on repeated requests with the exact same data.
+  the url and data parameters are correct, even on repeated requests with the exact same data, 
+  this is still being tested on.
+- Rate limits are not yet functional, it is recommended to run the Client with parameters 
+  `prevent_rate_limits` and `retry_rate_limits` set to `False` until they're finished. 
+
   
 # Credits
 - Currently global rate limit is handled by Martijn Pieters' [aiolimiter](https://github.com/mjpieters/aiolimiter).
