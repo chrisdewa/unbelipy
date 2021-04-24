@@ -1,3 +1,6 @@
+# 1.0.4b
+- Fixed bug with `currently_limited.currently_limited()` from issue #6 
+
 # 1.0.1b - 1.0.3b 
 - Documentation improvements
 - Versioning reformatting to follow semantic conventions.

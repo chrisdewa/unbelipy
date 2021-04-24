@@ -65,13 +65,13 @@ class ClientRateLimits:
 
     def __init__(self, prevent_rate_limits: bool):
         self.prevent_rate_limits = prevent_rate_limits
+        self.global_limiter = AsyncLimiter(15, 1.5) if prevent_rate_limits is True else AsyncNonLimiter()
         self.get_balance = BucketRateLimit(name='get_balance', prevent_rate_limits=prevent_rate_limits)
         self.edit_balance = BucketRateLimit(name='edit_balance', prevent_rate_limits=prevent_rate_limits)
         self.set_balance = BucketRateLimit(name='set_balance', prevent_rate_limits=prevent_rate_limits)
         self.get_leaderboard = BucketRateLimit(name='get_leaderboard', prevent_rate_limits=prevent_rate_limits)
         self.get_guild = BucketRateLimit(name='get_guild', prevent_rate_limits=prevent_rate_limits)
         self.get_permissions = BucketRateLimit(name='get_permissions', prevent_rate_limits=prevent_rate_limits)
-        self.global_limiter = AsyncLimiter(15, 1.5) if prevent_rate_limits is True else AsyncNonLimiter()
 
     def __repr__(self):
         limited = self.any_limited()
@@ -84,7 +84,7 @@ class ClientRateLimits:
         """
         now = datetime.utcnow()
         all_limits = dict()
-        for key in self.__dict__.keys():
+        for key in list(self.__dict__.keys())[2:]:  # removes prevent_rate_limits and global_limited
             attr = getattr(self, key)
             all_limits[key] = (attr.reset > now and attr.remaining == 0) if attr.reset else False
         return all_limits
