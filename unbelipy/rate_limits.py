@@ -31,18 +31,19 @@ class BucketRateLimit:
         if self._prevent_rate_limits is True:
             sem_size_dict = defaultdict(lambda: 10,
                                         get_guild=5,
+                                        edit_balance=9,
                                         get_permissions=20)
             self.sem = self.sem or asyncio.Semaphore(sem_size_dict[self.name], loop=asyncio.get_running_loop())
             await self.sem.acquire()
 
             route_offset = defaultdict(lambda: 1.2,
                                        get_guild=1.5,
+                                       edit_balance=1.6,
                                        get_permissions=0,
                                        )
-            route_offset['get_guild'] = 2
             now = datetime.utcnow()
             to_wait = ((self.reset or now) - now).total_seconds() + route_offset[self.name]
-
+            print(to_wait)
             await asyncio.sleep(to_wait)
 
     async def __aexit__(self, *args):
