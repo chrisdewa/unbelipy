@@ -1,3 +1,14 @@
+# 1.1.0b
+- Rewritten rate limit handlers. client.rate_limits now holds an attribute "buckets" which is a dictionary
+  that contains the name of the bucket as key and its handler as value. 
+  
+  Bucket handlers are classes that hold specific bucket rate limit information updated with each request, and a context manager that throttles requests to prevent 429s if that's enabled.
+  
+  True concurrency is only possible at the moment with different buckets.
+- Dataclasses now contain an attribute "bucket" with the name of the bucket that produced the dataclass.
+  This is useful to get the bucket handler from `client.rate_limits.buckets`
+- Next patch is expected to finally resolve rate_limit functionality
+
 # 1.0.4b
 - Fixed bug with `currently_limited.currently_limited()` from issue #6 
 

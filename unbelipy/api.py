@@ -5,7 +5,6 @@ Module to facilitate integration with UnbelievaBoat's API
 
 from asyncio import sleep as async_sleep
 from dataclasses import dataclass, field
-from datetime import datetime
 from inspect import stack
 from json import dumps
 from typing import Union, Dict, List, Any, Optional
@@ -13,7 +12,7 @@ from typing import Union, Dict, List, Any, Optional
 from aiohttp import ClientSession, ClientResponse
 
 from unbelipy.errors import TooManyRequests, NotFound, api_errors, UnknownError
-from unbelipy.rate_limits import ClientRateLimits, BucketRateLimit
+from unbelipy.rate_limits import BucketHandler, ClientRateLimits
 
 UNB_API_VERSION = 'v1'
 
@@ -45,6 +44,7 @@ class Balance:
     bank: Union[int, float] = field(compare=False)
     user_id: int = field(compare=False)
     guild_id: int = field(compare=False)
+    bucket: str = field(compare=False)
     rank: int = field(compare=False, default=None)
 
     def __post_init__(self):
@@ -66,7 +66,8 @@ class Balance:
             self.rank = int(self.rank)
 
     def __repr__(self):
-        return f"Balance(total={self.total}, cash={self.cash}, bank={self.bank}, rank={self.rank}, user_id={self.user_id}, guild_id={self.guild_id})"
+        return f"Balance(total={self.total}, cash={self.cash}, bank={self.bank}, rank={self.rank}, " \
+               f"user_id={self.user_id}, guild_id={self.guild_id})"
 
 
 @dataclass
@@ -81,6 +82,7 @@ class UnbGuild:
     owner_id: int = field(compare=False)
     member_count: int
     symbol: str = field(compare=False)
+    bucket: str = field(compare=False)
     channels: List[Any] = field(compare=False, default_factory=[])
     roles: List[Any] = field(compare=False, default_factory=[])
 
@@ -89,14 +91,14 @@ class UnbGuild:
         self.owner_id = int(self.owner_id)
 
 
-def _process_bal(bal_dict: dict, guild_id: int):
-    bal_dict['guild_id'] = guild_id
+def _process_bal(bal_dict: dict, guild_id: int, bucket: str):
+    bal_dict.update({'guild_id': guild_id, 'bucket': bucket})
     bal_dict.pop('found', None)
     return Balance(**bal_dict)
 
 
-def _process_lb(users, guild_id):
-    return [_process_bal(user, guild_id) for user in users]
+def _process_lb(users: dict, guild_id: int, bucket: str):
+    return [_process_bal(user, guild_id, bucket) for user in users]
 
 
 def _check_bal_args(cash, bank, reason) -> bool:
@@ -143,6 +145,7 @@ class UnbeliClient:
                 500: InternalServerError
     """
     _base_url = 'https://unbelievaboat.com/api/' + f'{UNB_API_VERSION}'
+    _base_url_len = len(_base_url)
     _member_url = _base_url + '/guilds/{guild_id}/users/{member_id}'
 
     def __init__(self,
@@ -155,15 +158,24 @@ class UnbeliClient:
         self.rate_limits = ClientRateLimits(prevent_rate_limits=prevent_rate_limits)
 
     def _get_member_url(self, guild_id: int, member_id: int):
-        return self._member_url.format(guild_id=guild_id, member_id=member_id)
+        url = self._member_url.format(guild_id=guild_id, member_id=member_id)
+        route = url[self._base_url_len:-len(str(member_id))]
+        return url, route
 
     @staticmethod
     def _get_caller():
         return stack()[2][3]
 
+    def _get_bucket_handler(self, bucket: str):
+        bucket_handler = self.rate_limits.buckets.get(bucket)
+        if bucket_handler is None:
+            bucket_handler = self.rate_limits.buckets[bucket] = BucketHandler(bucket=bucket)
+        return bucket_handler
+
     async def _request(self,
                        method: str,
                        url: str,
+                       bucket: str,
                        data: Optional[str] = None,
                        **kwargs
                        ) -> Union[int,
@@ -193,57 +205,42 @@ class UnbeliClient:
         else:  # defaults to 'GET'
             request_manager = cs.get(url=url)
 
-        bucket: BucketRateLimit = getattr(self.rate_limits, caller)
-
+        bucket_handler: BucketHandler = self._get_bucket_handler(bucket)
+        bucket_handler.prevent_429 = self._prevent_rate_limits
         async with self.rate_limits.global_limiter:
-            async with bucket:
+            async with bucket_handler as bh:
                 async with cs:
                     r = await request_manager
+                    bh.check_limit_headers(r)  # sets up the bucket rate limit attributes w/ response headers
                     response_data = await r.json()
-                    no_error_response = await self._check_response(response=r, caller=caller)
-        try:
-            if no_error_response:
-                if caller in ['edit_balance', 'set_balance', 'get_balance']:
-                    return _process_bal(response_data, guild_id)
-                elif caller == 'get_leaderboard':
-                    if page is None:
-                        return _process_lb(response_data, guild_id)
+                try:
+                    if await self._check_response(response=r, bucket=bucket):
+                        if caller in ['edit_balance', 'set_balance', 'get_balance']:
+                            return _process_bal(response_data, guild_id, bucket)
+                        elif caller == 'get_leaderboard':
+                            if page is None:
+                                return _process_lb(response_data, guild_id, bucket)
+                            else:
+                                response_data['users'] = _process_lb(response_data['users'], guild_id, bucket)
+                                return response_data
+                        elif caller == 'get_permissions':
+                            return response_data['permissions']
+                        elif caller == 'get_guild':
+                            response_data['bucket'] = bucket
+                            return UnbGuild(**response_data)
+                except TooManyRequests as E:
+                    if self._retry_rate_limits is True:
+                        timeout = response_data['retry_after'] + 1
+                        await async_sleep(timeout)
+                        return await self._request(method, url, bucket, data, **kwargs)  # reschedule same request
                     else:
-                        response_data['users'] = _process_lb(response_data['users'], guild_id)
-                        return response_data
-                elif caller == 'get_permissions':
-                    return response_data['permissions']
-                elif caller == 'get_guild':
-                    return UnbGuild(**response_data)
-        except TooManyRequests as E:
-            if self._retry_rate_limits is True:
-                timeout = response_data['retry_after'] + 2
-                await async_sleep(timeout)
-                return await self._request(method, url, data, **kwargs)
-            else:
-                raise E
+                        raise E
 
-    async def _check_response(self, response: ClientResponse, caller: str):
+    async def _check_response(self, response: ClientResponse, bucket: str):
         """Checks API response for errors. Returns True only on status 200"""
         status = response.status
         reason = response.reason
         data = await response.json()
-
-        bucket = getattr(self.rate_limits, caller)
-
-        limits = dict()
-        for key in ['X-RateLimit-Limit',
-                    'X-RateLimit-Remaining',
-                    'X-RateLimit-Reset']:
-            value = response.headers.get(key)
-            if value is not None:
-                value = int(value)
-                if key == 'X-RateLimit-Reset':
-                    value = datetime.utcfromtimestamp(value / 1000)
-            limits[key] = value
-        bucket.limit = limits.pop('X-RateLimit-Limit', None)
-        bucket.remaining = limits.pop('X-RateLimit-Remaining', None)
-        bucket.reset = limits.pop('X-RateLimit-Reset', None)
 
         if status == 200:
             return True
@@ -253,14 +250,14 @@ class UnbeliClient:
                 text = f"Global rate limit. {data['message']}"
             elif retry_after := data.get('retry_after'):
                 retry_after = int(retry_after) / 1000
-                bucket.retry_after = retry_after
-                setattr(self.rate_limits, caller, bucket)
+                bucket_handler = self._get_bucket_handler(bucket)
+                bucket_handler.retry_after = retry_after
                 text = f"{message} retry after: {retry_after}s"
             else:
                 text = f"{message}"
-            raise TooManyRequests(text + f', caller: {caller}')
+            raise TooManyRequests(text + f', bucket: {bucket}')
         elif status == 404:
-            raise NotFound(f'Error Code: "{status}" Reason: "{reason}", caller {caller}, url="{response.url}"')
+            raise NotFound(f'Error Code: "{status}" Reason: "{reason}", bucket {bucket}')
         else:
             error_text = f'Error code: "{status}" Reason: "{reason}"'
             if status in api_errors:
@@ -274,9 +271,10 @@ class UnbeliClient:
         """
         if (t := type(guild_id)) is not int:
             raise TypeError(f"guild_id must be an int but {t} was received")
-
-        url = f"{self._base_url}/applications/@me/guilds/{guild_id}"
-        return await self._request(method='GET', url=url)
+        method = 'GET'
+        url = self._base_url + f"/applications/@me/guilds/{guild_id}"
+        bucket = method + url[self._base_url_len:]
+        return await self._request(method=method, url=url, bucket=bucket)
 
     async def get_guild(self, guild_id) -> UnbGuild:
         """
@@ -294,9 +292,10 @@ class UnbeliClient:
         """
         if (t := type(guild_id)) is not int:
             raise TypeError(f"guild_id must be an int but {t} was received")
-
+        method = 'GET'
         url = f"{self._base_url}/guilds/{guild_id}"
-        return await self._request(method='GET', url=url)
+        bucket = method + url[self._base_url_len:]
+        return await self._request(method=method, url=url, bucket=bucket)
 
     async def get_leaderboard(self,
                               guild_id: int,
@@ -337,8 +336,10 @@ class UnbeliClient:
                 else:
                     url += f"{arg}={d[arg]}&"
 
+        method = 'GET'
         url = url[:-1]
-        return await self._request(method='GET', url=url, guild_id=guild_id, page=page)
+        bucket = method + url[self._base_url_len:]
+        return await self._request(method=method, url=url, bucket=bucket, guild_id=guild_id, page=page)
 
     async def get_balance(self, guild_id: int, member_id: int) -> Balance:
         """
@@ -351,9 +352,10 @@ class UnbeliClient:
         for arg in (d := {'guild_id': guild_id, 'member_id': member_id}):
             if (t := type(d[arg])) is not int:
                 raise TypeError(f"{arg} can only be int but was {t}")
-
-        url = self._get_member_url(guild_id, member_id)
-        return await self._request(method='GET', url=url, guild_id=guild_id)
+        method = 'GET'
+        url, route = self._get_member_url(guild_id, member_id)
+        bucket = method + route
+        return await self._request(method=method, url=url, bucket=bucket, guild_id=guild_id)
 
     async def edit_balance(self,
                            guild_id: int,
@@ -377,12 +379,14 @@ class UnbeliClient:
 
 
         """
-        url = self._get_member_url(guild_id, member_id)
 
         if _check_bal_args(cash, bank, reason):
             data = {'cash': cash, 'bank': bank, 'reason': reason}
-            return await self._request(method='PATCH', url=url,
-                                       data=dumps(data), guild_id=guild_id)
+
+            method = 'PATCH'
+            url, route = self._get_member_url(guild_id, member_id)
+            bucket = method + route
+            return await self._request(method=method, url=url, bucket=bucket, data=dumps(data), guild_id=guild_id)
 
     async def set_balance(self,
                           guild_id: int,
@@ -405,9 +409,9 @@ class UnbeliClient:
             balance (Balance) a dataclass containing the information of the newly set balance for the user.
         """
 
-        url = self._get_member_url(guild_id, member_id)
-
         if _check_bal_args(cash, bank, reason):
             data = {'cash': cash, 'bank': bank, 'reason': reason}
-            return await self._request(method='PUT', url=url,
-                                       data=dumps(data), guild_id=guild_id)
+            method = 'PUT'
+            url, route = self._get_member_url(guild_id, member_id)
+            bucket = method + route
+            return await self._request(method=method, url=url, bucket=bucket, data=dumps(data), guild_id=guild_id)
