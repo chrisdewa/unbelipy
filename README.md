@@ -2,10 +2,11 @@
 
 [![PyPI status](https://img.shields.io/pypi/status/unbelipy.svg)](https://pypi.python.org/pypi/unbelipy/)
 [![PyPI version fury.io](https://badge.fury.io/py/unbelipy.svg)](https://pypi.python.org/pypi/unbelipy/)
+[![PyPI downloads](https://img.shields.io/pypi/dm/unbelipy.svg)](https://pypi.python.org/pypi/unbelipy/)
 [![PyPI license](https://img.shields.io/pypi/l/unbelipy.svg)](https://pypi.python.org/pypi/unbelipy/)
 
-# unbelipy
 
+# unbelipy
 Asynchronous wrapper for UnbelievaBoat's API written in python
 
 ## Characteristics
@@ -62,6 +63,7 @@ asyncio.run(main())
 - user_id: id of the user for which the amount is set
 - guild_id: id for the guild the user belongs to
 - rank: rank of the user in the guild according to query parameters
+- bucket: the bucket that produced this object
 
 "guild_info" is a dataclass with guild info containing:
 - id
@@ -70,6 +72,7 @@ asyncio.run(main())
 - owner_id  
 - member_count  
 - symbol (currency)
+- bucket: the bucket that produced this object
 
 ### UnbeliClient init parameters:
 - `token` unbelivaboat's client token.
@@ -82,26 +85,19 @@ asyncio.run(main())
 - `rate_limits`: this class features attributes about the state of each route. They Update after each request. 
   Bucket Attributes. Each of the following contain an async context manager to prevent 429s in case its enabled and 
   contain information about the specific route rate limit headers.
-    `rate_limits.get_balance`
-    `rate_limits.edit_balance`
-    `rate_limits.set_balance`
-    `rate_limits.get_leaderboard`
-    `rate_limits.get_guild`
-    `rate_limits.get_permissions`
+    `buckets` a dictionary with the bucket name as key and its handler as value
   rate limit Methods:
-    `rate_limits.currently_limited()` - returns a dictionary containing the bucket name, and a boolean indicating 
-        if they're currently limited
+    `rate_limits.currently_limited()` - returns a list containing the bucket name of the buckets that are currently 
+    being limited. 
     `rate_limits.any_limited()` - returns a bool indicating if any bucket is currently being limited
-    `rate_limits.is_limited(name: str)` - returns a bool indicating if the specified bucket is being limited
+    `rate_limits.is_limited(bucket: str)` - returns a bool indicating if the specified bucket is being limited
   
 # Know Issues:
 - `'-Infinity'` is accepted by the API as a parameter for cash or bank (edit_balance and set_balance),
-  but it does not appear to affect the balance. I'm waiting on the devs word on this issue.
-- `client.edit_balace` which sends a patch request sometimes comes back with a 404 error even when 
-  the url and data parameters are correct, even on repeated requests with the exact same data, 
-  this is still being tested on.
-- Rate limits are not yet functional, it is recommended to run the Client with parameters 
-  `prevent_rate_limits` and `retry_rate_limits` set to `False` until they're finished. 
+  but it does not appear to affect the balance. This is caused because the API receives -Infinity as null which is also 
+  used when the value didn't change. At the moment there is no word this is going to be fixed.
+- Rate limits are not yet completely functional, it is recommended to run the Client with parameters 
+  `prevent_rate_limits` and `retry_rate_limits` set to `False` until they're finished.
 
   
 # Credits
