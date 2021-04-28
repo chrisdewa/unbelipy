@@ -80,7 +80,12 @@ asyncio.run(main())
   to prevent 429 type errors (rate limits). This will work even on concurrent tasks or loops.
 - `retry_rate_limits` (bool) if enabled (True, default is False) the client will retry requests after 
   getting a 429 error. It will sleep through the retry_after time stipulated by UnbelivaBoat's API
-  
+
+#### Note:
+It's recommended to use the client with `prevent_rate_limits` set to True with or without `rety_rate_limits`.
+Performance is similar either way but running client with only `retry_rate_limits` may result in multiple 429 errors
+
+
 ### UnbeliClient public attributes
 - `rate_limits` this class features attributes about the state of each route. They Update after each request. 
   Bucket Attributes. Each of the following contain an async context manager to prevent 429s in case its enabled and 
@@ -91,6 +96,14 @@ asyncio.run(main())
     being limited. 
     `rate_limits.any_limited()` - returns a bool indicating if any bucket is currently being limited
     `rate_limits.is_limited(bucket: str)` - returns a bool indicating if the specified bucket is being limited
+
+# Rate limit buckets examples:
+- **get_guild** `'GET/guilds/{guild_id}'` 
+- **get_leaderboard** `'GET/guilds/{guild_id}/users'`
+- **get_balance** `'GET/guilds/{guild_id}/users/:id'`
+- **edit_balance** `'PATCH/guilds/{guild_id}/users/:id'`
+- **set_balance** `'PUT/guilds/{guild_id}/users/:id'`
+- **get_permissions** `'GET/applications/@me/guilds/{guild_id}'`
   
 # Know Issues:
 - `'-Infinity'` is accepted by the API as a parameter for cash or bank (edit_balance and set_balance),

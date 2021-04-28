@@ -1,3 +1,7 @@
+# 1.2.0b
+- Bucket routes edited. Mainly user balance get/patch/put and leaderboard
+- Fixed bug in `retry_rate_limits`
+
 # 1.1.1b
 - Moved the rate limit throttler for buckets from the exit component of the context manager to enter, after acquiring the lock 
 

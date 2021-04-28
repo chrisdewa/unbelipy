@@ -3,7 +3,7 @@
 Module to facilitate integration with UnbelievaBoat's API
 """
 
-from asyncio import sleep as async_sleep
+import asyncio
 from dataclasses import dataclass, field
 from inspect import stack
 from json import dumps
@@ -159,7 +159,7 @@ class UnbeliClient:
 
     def _get_member_url(self, guild_id: int, member_id: int):
         url = self._member_url.format(guild_id=guild_id, member_id=member_id)
-        route = url[self._base_url_len:-len(str(member_id))]
+        route = url[self._base_url_len:-len(str(member_id))] + ':id'
         return url, route
 
     @staticmethod
@@ -177,6 +177,7 @@ class UnbeliClient:
                        url: str,
                        bucket: str,
                        data: Optional[str] = None,
+                       caller=None,
                        **kwargs
                        ) -> Union[int,
                                   Balance,
@@ -194,7 +195,8 @@ class UnbeliClient:
                 page: int number of page in the case of get_leaderboard
         """
         cs = ClientSession(headers=self._header)
-        caller = self._get_caller()
+        if caller is None:
+            caller = self._get_caller()
         guild_id = kwargs.pop('guild_id', None)
         page = kwargs.pop('page', None)
 
@@ -230,9 +232,10 @@ class UnbeliClient:
                             return UnbGuild(**response_data)
                 except TooManyRequests as E:
                     if self._retry_rate_limits is True:
-                        timeout = response_data['retry_after'] + 1
-                        await async_sleep(timeout)
-                        return await self._request(method, url, bucket, data, **kwargs)  # reschedule same request
+                        timeout = response_data['retry_after'] / 1000 + 1
+                        await asyncio.sleep(timeout)
+                        # reschedule same request
+                        return await self._request(method, url, bucket, data, caller=caller, **kwargs)
                     else:
                         raise E
 
@@ -319,8 +322,8 @@ class UnbeliClient:
         Returns:
             dictionary containing leaderboard information
         """
-
-        url = self._base_url + f'/guilds/{guild_id}/users?'
+        bucket_path = f'/guilds/{guild_id}/users'
+        url = self._base_url + bucket_path + '?'
         if sort is not None:
             if (t := type(sort)) is not str:
                 raise TypeError(f'sort must be type str but was "{t}"')
@@ -338,7 +341,7 @@ class UnbeliClient:
 
         method = 'GET'
         url = url[:-1]
-        bucket = method + url[self._base_url_len:]
+        bucket = method + bucket_path
         return await self._request(method=method, url=url, bucket=bucket, guild_id=guild_id, page=page)
 
     async def get_balance(self, guild_id: int, member_id: int) -> Balance:
