@@ -50,14 +50,14 @@ class BucketHandler:
         self.cond = self.cond or asyncio.Condition(loop=asyncio.get_running_loop())
         if self.prevent_429 is True:
             await self.cond.acquire()
-        return self
-
-    async def __aexit__(self, *args):
-        if self.prevent_429 is True:
             if self.remaining is not None and self.remaining == 0:
                 now = datetime.utcnow()
                 to_wait = (self.reset - now).total_seconds() + 1
                 await asyncio.sleep(to_wait)
+        return self
+
+    async def __aexit__(self, *args):
+        if self.prevent_429 is True:
             self.cond.release()
 
 

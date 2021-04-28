@@ -1,3 +1,6 @@
+# 1.1.1b
+- Moved the rate limit throttler for buckets from the exit component of the context manager to enter, after acquiring the lock 
+
 # 1.1.0b
 - Rewritten rate limit handlers. client.rate_limits now holds an attribute "buckets" which is a dictionary
   that contains the name of the bucket as key and its handler as value. 
