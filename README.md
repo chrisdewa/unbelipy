@@ -16,7 +16,7 @@ Asynchronous wrapper for UnbelievaBoat's API written in python
 
 ## Project status
 Early beta. It's not yet production ready. 
-Although most of the functionality is operational rate limits are still being worked on. 
+Although most of the functionality is operational, rate limits are still being worked on. 
 
 ## Installation
 
@@ -77,12 +77,12 @@ asyncio.run(main())
 ### UnbeliClient init parameters:
 - `token` unbelivaboat's client token.
 - `prevent_rate_limits` (bool) if enabled (True, the default) the client will do its best 
-  to prevent 429 type errors (rate limits). This will work even on concurrent tasts or loops.
+  to prevent 429 type errors (rate limits). This will work even on concurrent tasks or loops.
 - `retry_rate_limits` (bool) if enabled (True, default is False) the client will retry requests after 
   getting a 429 error. It will sleep through the retry_after time stipulated by UnbelivaBoat's API
   
 ### UnbeliClient public attributes
-- `rate_limits`: this class features attributes about the state of each route. They Update after each request. 
+- `rate_limits` this class features attributes about the state of each route. They Update after each request. 
   Bucket Attributes. Each of the following contain an async context manager to prevent 429s in case its enabled and 
   contain information about the specific route rate limit headers.
     `buckets` a dictionary with the bucket name as key and its handler as value
