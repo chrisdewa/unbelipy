@@ -13,6 +13,8 @@ Asynchronous wrapper for UnbelievaBoat's API written in python
 - Easy to use
 - Full error handling
 - Type hinted readable code
+- Active maintenance
+- Fully Asynchronous
 
 ## Project status
 Early beta. It's not yet production ready. 
@@ -109,9 +111,6 @@ Performance is similar either way but running client with only `retry_rate_limit
 - `'-Infinity'` is accepted by the API as a parameter for cash or bank (edit_balance and set_balance),
   but it does not appear to affect the balance. This is caused because the API receives -Infinity as null which is also 
   used when the value didn't change. At the moment there is no word this is going to be fixed.
-- Rate limits are not yet completely functional, it is recommended to run the Client with parameters 
-  `prevent_rate_limits` and `retry_rate_limits` set to `False` until they're finished.
-
   
 # Credits
 - Currently, global rate limit is handled by Martijn Pieters' [aiolimiter](https://github.com/mjpieters/aiolimiter).
