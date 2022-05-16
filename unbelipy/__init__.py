@@ -22,13 +22,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+__version__ = '1.2.0.b'
+
 import logging
 
-from .client import UnbeliClient
+from .client import UnbeliClient as UnbeliClient
 from .errors import *
 from .objects import (
-    UserBalance,
-    Guild
+    UserBalance as UserBalance,
+    Guild as Guild
 )
+from .rate_limits import *
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())

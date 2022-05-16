@@ -22,12 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from __future__ import annotations
 import asyncio
 from collections import defaultdict
-from datetime import (
-    datetime, 
-    timedelta
-)
+from datetime import datetime, timedelta
 from typing import (
     Dict, 
     List,
@@ -37,14 +35,16 @@ from typing import (
 from aiohttp import ClientResponse
 from aiolimiter import AsyncLimiter
 
+__all__ = (
+    "BucketHandler",
+    "ClientRateLimits"
+)
+
 class BucketHandler:
     """
-    Handles bucket specific rate limits
-    flow:
-        dict {
-            bucket_name: BucketHandler
-        }
+    Handles bucket-specific rate limits.
     """
+
     limit: int = None
     remaining: int = None
     reset: datetime = None
@@ -108,18 +108,28 @@ class ClientRateLimits:
 
     def currently_limited(self) -> List[str]:
         """
-        Returns:
-            Returns a list of the buckets (str) that are currently being limited.
+        This is useful to get the buckets which are currently being rate limited.
+
+        Returns
+        -------
+        List[:class:`str`]
+            A list of the rate limited buckets.
         """
+
         now = datetime.utcnow()
         limited = [k for k, v in self.buckets.items() if v.reset is not None and v.reset > now and v.remaining == 0]
         return limited
 
     def any_limited(self) -> bool:
         """
-        Returns:
-            True if any bucket is being rate limited
+        This only returns ``True`` if one of the buckets are being rate limited.
+
+        Returns
+        -------
+        bool
+            ...
         """
+
         return any(self.currently_limited())
 
     def is_limited(self, bucket: str) -> bool:

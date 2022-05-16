@@ -23,4 +23,4 @@ SOFTWARE.
 """
 
 API_VERSION = "v1"
-API_BASE_URL = f"https://unbelievaboat.com/api/{API_VERSION}/"
+API_BASE_URL = f"https://unbelievaboat.com/api/{API_VERSION}"

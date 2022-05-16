@@ -23,6 +23,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from __future__ import annotations
+
 from dataclasses import (
     dataclass, 
     field
@@ -34,32 +36,35 @@ from typing import (
     Any
 )
 
+__all__ = (
+    "UserBalance",
+    "Guild"
+)
+
 @dataclass(order=True)
 class UserBalance:
     """
     Dataclass representing the balance of a user from the API.
 
-    Attributes:
-        total (Union[int, float]): The user's total amount of money (cash + bank).
-        bank (Union[int, float]): The user's bank amount.
-        cash (Union[int, float]): The user's cash amount.
-        user_id (int): The user's unique ID.
-        guild_id (int): The user's guild's unique ID.
-        bucket
-        rank: The rank of the user in the guild according to query parameters.
-
-    Comparisons:
-        Comparisons are made only with the ``total`` attribute.
-        Supported operations:
-            ``__eq__`` - (==)
-            ``__lt__`` - (<)
-            ``__le__`` - (<=)
-            ``__gt__`` - (>)
-            ``__ge__`` - (>=)
-
-    Note:
+    .. note::
         The ``total``, ``bank`` and ``cash`` attributes *may* be a float if set to infinity (positive or negative).
+
+    Attributes
+    ----------
+    total: Union[:class:`int`, :class:`float`]
+        The user's total amount of money (cash + bank).
+    bank: Union[:class:`int`, :class:`float`]
+        The user's bank amount.
+    cash: Union[:class:`int`, :class:`float`]
+        The user's cash amount.
+    user_id: :class:`int`
+        The user's unique ID.
+    guild_id: :class:`int`
+        The user's guild's unique ID.
+    rank : :class:`int`
+        The rank of the user in the guild according to query parameters.
     """
+
     total: Union[int, float]
     cash: Union[int, float] = field(compare=False)
     bank: Union[int, float] = field(compare=False)
@@ -97,25 +102,20 @@ class Guild:
     """
     Dataclass representing a guild from the API.
 
-    Attributes:
-        id (int): The guild's unique ID.
-        name (str): The guild's name.
-        owner_id (int): The guild owner's unique ID.
-        member_count (int): The guild's amount of members.
-        symbol (str): The guild's currency symbol.
-        bucket (str): ...
-        channels (Optional[List[Any]]): ...
-        roles (Optional[List[Any]]): ...
-
-    Comparisons:
-        Comparisons are made only with the ``id`` attribute.
-        Supported operations:
-            ``__eq__`` - (==)
-            ``__lt__`` - (<)
-            ``__le__`` - (<=)
-            ``__gt__`` - (>)
-            ``__ge__`` - (>=)
+    Attributes
+    ----------
+        id: :class:`int`
+            The guild's unique ID.
+        name: :class:`str`
+            The guild's name.
+        owner_id: :class:`int`
+            The guild owner's unique ID.
+        member_count: :class:`int`
+            The guild's amount of members.
+        symbol: :class:`str`
+            The guild's currency symbol.
     """
+
     id: int
     name: str = field(compare=False)
     icon: str = field(compare=False)

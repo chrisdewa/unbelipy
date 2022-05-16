@@ -22,38 +22,85 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-class UnbError(Exception):
+from __future__ import annotations
+
+__all__ = (
+    "UnbException",
+    "UnknownException",
+    "HTTPException",
+    "BadRequest",
+    "Unauthorized",
+    "Forbidden",
+    "NotFound",
+    "TooManyRequests",
+    "InternalServerError"
+)
+
+class UnbException(Exception):
     """Base exception class for unbelipy."""
+
     pass
 
-class ResponseError(UnbError):
+class UnknownException(UnbException):
+    """The exception that is raised when unknown data is received from the API.
+    
+    This is a subclass of :exc:`UnbException`.
+    """
+
     pass
 
-class BadRequest(ResponseError):
+class HTTPException(UnbException):
+    """The exception that is raised when a HTTP request has failed.
+    
+    This is a subclass of :exc:`UnbException`.
+    """
+
     pass
 
-class Unauthorized(ResponseError):
+class BadRequest(HTTPException):
+    """Exception that is raised when the response' status code is 400.
+    
+    This inherits from :exc:`HTTPException`.
+    """
+
     pass
 
-class Forbidden(ResponseError):
+class Unauthorized(HTTPException):
+    """Exception that is raised when the response' status code is 401.
+    
+    This inherits from :exc:`HTTPException`.
+    """
+
     pass
 
-class NotFound(ResponseError):
+class Forbidden(HTTPException):
+    """Exception that is raised when the response' status code is 403.
+    
+    This inherits from :exc:`HTTPException`.
+    """
+
     pass
 
-class TooManyRequests(ResponseError):
+class NotFound(HTTPException):
+    """Exception that is raised when the response' status code is 404.
+    
+    This inherits from :exc:`HTTPException`.
+    """
+
     pass
 
-class InternalServerError(ResponseError):
+class TooManyRequests(HTTPException):
+    """Exception that is raised when the response' status code is 429.
+    
+    This inherits from :exc:`HTTPException`.
+    """
+
     pass
 
-class UnknownError(UnbError):
-    pass
+class InternalServerError(HTTPException):
+    """Exception that is raised when the response' status code is 401.
+    
+    This inherits from :exc:`HTTPException`.
+    """
 
-API_ERRORS = {
-    400: BadRequest,
-    401: Unauthorized,
-    403: Forbidden,
-    429: TooManyRequests,
-    500: InternalServerError
-}
+    pass
