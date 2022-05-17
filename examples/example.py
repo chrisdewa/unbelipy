@@ -4,8 +4,8 @@ from unbelipy import UnbeliClient
 
 UNB_API_TOKEN = "Token generated from https://unbelievaboat.com/applications/"
 # Warning:
-# It is advisable to keep your token safely
-# .env files are an option but it requires another dependency, so it's not always warranted.
+# It's advisable that you set your token as an enviromental variable. 
+# Always keep your credentials as a secret.
 
 unbeliclient = UnbeliClient(
     token=UNB_API_TOKEN
@@ -50,3 +50,6 @@ async def main() -> None:
     print("After setting balance: ", new_balance)
 
 asyncio.run(main())
+
+# Now that we're done with stuff, we should close the session.
+asyncio.run(unbeliclient.close())
