@@ -36,8 +36,8 @@ extensions = [
 
 # For mapping short alias names
 extlinks = {
-    'issue': ('https://github.com/chrisdewa/unbelipy/issues/%s', 'Issue '),
-    'pr': ('https://github.com/chrisdewa/unbelipy/pulls/%s', 'Pull Request ')
+    'issue': ('https://github.com/chrisdewa/unbelipy/issues/%s', 'GH-'),
+    'pr': ('https://github.com/chrisdewa/unbelipy/pulls/%s', 'PR-')
 }
 
 # For referencing external documentations

@@ -6,6 +6,10 @@ Changelog
 This page outlines the changes in specific versions.
 Some *may* be breaking changes, which requires you to update your code as soon as possible.
 
+v2.0.0b
+-------
+- Updating soon.
+
 v1.2.0b
 -------
 - Bucket routes edited. Mainly user balance GET/PATCH/PUT and leaderboard.

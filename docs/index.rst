@@ -8,10 +8,9 @@ Welcome to unbelipy's documentation!
 
 Asynchronous wrapper for UnbelievaBoat's API written in Python.
 
-Contents
-========
 .. toctree::
    :titlesonly:
+   :caption: Contents:
 
    client
    objects
