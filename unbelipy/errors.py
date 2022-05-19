@@ -32,7 +32,7 @@ __all__ = (
     "Forbidden",
     "NotFound",
     "TooManyRequests",
-    "InternalServerError"
+    "InternalServerError",
     "UnknownException"
 )
 
