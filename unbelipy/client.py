@@ -167,11 +167,17 @@ class UnbeliClient:
     rate_limits: :class:`ClientRateLimits`
         Dictionary containing information on the rate limit status of the client in the API.
 
-        Keys:
-            ``X-RateLimit-Limit``: The number of requests that can be made.
-            ``X-RateLimit-Remaining``: The number of remaining requests that can be made.
-            ``X-RateLimit-Reset``: datetime to when the rate limit resets.
-            ``retry_after``: The number of seconds to wait before being able to make another request.
+        +---------------------------+--------------------------------------------------------------------------+
+        |         Key name          |                         Description                                      |
+        +===========================+==========================================================================+
+        | ``X-RateLimit-Limit``     | The number of requests that can be made.                                 |
+        +---------------------------+--------------------------------------------------------------------------+
+        | ``X-RateLimit-Remaining`` | The number of remaining requests that can be made.                       |
+        +---------------------------+--------------------------------------------------------------------------+
+        | ``X-RateLimit-Reset``     | Datetime to when the rate limit resets.                                  |
+        +---------------------------+--------------------------------------------------------------------------+
+        | ``retry_after``           | The number of seconds to wait before being able to make another request. |
+        +---------------------------+--------------------------------------------------------------------------+
     """
 
     _BASE_URL = API_BASE_URL
@@ -586,7 +592,7 @@ class UnbeliClient:
                 try:
                     if await self._check_response(response=response, bucket=bucket):
 
-                        if caller in ['edit_balance', 'set_balance', 'get_balance']:
+                        if caller in ['set_user_balance', 'set_user_balance', 'get_user_balance']:
                             return _process_bal(response_data, guild_id, bucket)
 
                         elif caller == 'get_guild_leaderboard':

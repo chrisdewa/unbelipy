@@ -8,7 +8,18 @@ Some *may* be breaking changes, which requires you to update your code as soon a
 
 v2.0.0b
 -------
-- Updating soon.
+- Renamed all public methods to match the API's naming.
+    - ``UnbeliClient.get_leaderboard`` has been renamed to :meth:`UnbeliClient.get_guild_leaderboard`.
+    - ``UnbeliClient.get_balance`` has been renamed to :meth:`UnbeliClient.get_user_balance`.
+    - ``UnbeliClient.edit_balance`` has been renamed to :meth:`UnbeliClient.edit_user_balance`.
+    - ``UnbeliClient.set_balance`` has been renamed to :meth:`UnbeliClient.set_user_balance`.
+- Allow users to input an open ``session`` keyword-argument in :class:`UnbeliClient`.
+- Added :meth:`UnbeliClient.close` to allow users to close the current session when done using.
+- Rename the names of some exceptions.
+    - ``ResponseError`` has been renamed to :exc:`HTTPException`.
+    - ``UnknownError`` has been renamed to :exc:`UnknownException`
+- Removed ``roles`` and ``channels`` as a public attribute from :class:`Guild`.
+- Fully setup documentation using Sphinx and readthedocs.io.
 
 v1.2.0b
 -------

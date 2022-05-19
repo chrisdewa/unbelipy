@@ -26,7 +26,6 @@ from __future__ import annotations
 
 __all__ = (
     "UnbException",
-    "UnknownException",
     "HTTPException",
     "BadRequest",
     "Unauthorized",
@@ -34,18 +33,11 @@ __all__ = (
     "NotFound",
     "TooManyRequests",
     "InternalServerError"
+    "UnknownException"
 )
 
 class UnbException(Exception):
     """Base exception class for unbelipy."""
-
-    pass
-
-class UnknownException(UnbException):
-    """The exception that is raised when unknown data is received from the API.
-    
-    This is a subclass of :exc:`UnbException`.
-    """
 
     pass
 
@@ -101,6 +93,14 @@ class InternalServerError(HTTPException):
     """Exception that is raised when the response' status code is 401.
     
     This inherits from :exc:`HTTPException`.
+    """
+
+    pass
+
+class UnknownException(UnbException):
+    """The exception that is raised when unknown data is received from the API.
+    
+    This is a subclass of :exc:`UnbException`.
     """
 
     pass
