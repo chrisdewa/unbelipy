@@ -7,7 +7,7 @@
 [![PyPI downloads](https://img.shields.io/pypi/dm/unbelipy.svg)](https://pypi.python.org/pypi/unbelipy/)
 [![PyPI license](https://img.shields.io/pypi/l/unbelipy.svg)](https://pypi.python.org/pypi/unbelipy/)
 
-Asynchronous wrapper for UnbelievaBoat's API written in python
+Asynchronous wrapper for UnbelievaBoat's API written in Python.
 
 ## Characteristics
 - Easy to use
@@ -48,13 +48,16 @@ Likewise, if you encounter any issues, you may [create a new Issue](https://gith
 ## Examples
 To start off, you may [check out some examples](https://github.com/chrisdewa/unbelipy/tree/master/examples) in this repository!
 
+## Links
+- [Documentation](https://unbelipy.readthedocs.io/en/latest/)
+
 ## Contact
 As of now, there is no support server for this library.
 However, you may contact the following people on Discord:
 - [ChrisDewa#4552](https://discord.com/users/365957462333063170)
 - [invalid-user#1119](https://discord.com/users/714731543309844561)
 
-<!-- # Know Issues:
+<!-- # Known Issues:
 - `'-Infinity'` is accepted by the API as a parameter for cash or bank (edit_balance and set_balance),
   but it does not appear to affect the balance. This is caused because the API receives -Infinity as null which is also 
   used when the value didn't change. At the moment there is no word this is going to be fixed.

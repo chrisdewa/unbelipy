@@ -11,13 +11,19 @@ Asynchronous wrapper for UnbelievaBoat's API written in Python.
 .. toctree::
    :titlesonly:
    :caption: Contents:
+   :maxdepth: 2
 
    client
    objects
    exceptions
    changelog
 
+Links
+-----
+- `Repository <https://github.com/chrisdewa/unbelipy>`
+   - `Create a new Issue <https://github.com/chrisdewa/unbelipy/issues/new/choose>`
+
 Indices and tables
-==================
-* :ref:`genindex`
-* :ref:`search`
+------------------
+- :ref:`genindex`
+- :ref:`search`

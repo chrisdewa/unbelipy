@@ -123,6 +123,8 @@ class Guild:
     member_count: int = field(compare=False)
     symbol: str = field(compare=False)
     bucket: str = field(compare=False)
+
+    # don't document
     channels: Optional[List[Any]] = field(compare=False, default_factory=[])
     roles: Optional[List[Any]] = field(compare=False, default_factory=[])
 

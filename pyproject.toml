@@ -1,25 +1,26 @@
 [tool.poetry]
 name = "unbelipy"
 version = "2.0.0b"
-description = "Asynchronous wrapper for UnbelievaBoat's API written in python"
-keywords=["discord", "discord.py", "discord bot", "UnbelievaBoat"]
-authors = ["chrisdewa <alexdewa@gmail.com>"]
+description = "Asynchronous wrapper for UnbelievaBoat's API written in Python."
+keywords = ["discord", "discord.py", "discord bot", "UnbelievaBoat"]
+authors = ["chrisdewa <alexdewa@gmail.com>", "rperson1508 <rperson1508@pm.me>"]
 
 readme = "README.md"
 license = "MIT"
 repository = "https://github.com/chrisdewa/unbelipy"
-classifiers=[
+classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3.8",
 ]
 include = ["LICENSE"]
 packages = [
-    {include = "unbelipy"}
+    { include = "unbelipy" }
 ]
 
 [tool.poetry.urls]
-"Issue Tracker" = "https://github.com/chrisdewa/unbelipy/issues"
+"Issue tracker" = "https://github.com/chrisdewa/unbelipy/issues"
+"Documentation" = "https://unbelipy.readthedocs.io/en/latest/"
 
 [tool.poetry.dependencies]
 python = "^3.8"
@@ -32,7 +33,10 @@ sphinx-book-theme = { version = "^0.3.2", optional = true }
 [tool.poetry.dev-dependencies]
 
 [tool.poetry.extras]
-docs = ["sphinx", "sphinx-book-theme"]
+docs = [
+    "sphinx", 
+    "sphinx-book-theme"
+]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
