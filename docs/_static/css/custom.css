@@ -1,0 +1,4 @@
+/* Dark theme */
+html[data-theme="dark"] {
+    background: #000000;
+}

@@ -8,7 +8,7 @@ Some verions *may* be breaking changes, which requires you to update your code a
 
 v2.0.0b
 -------
-.. note::
+.. important::
     This version causes breaking changes.
 
 - Renamed all public methods to match the API's naming.

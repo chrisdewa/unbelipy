@@ -31,9 +31,7 @@ from dataclasses import (
 )
 from typing import (
     Optional,
-    Union, 
-    List, 
-    Any
+    Union
 )
 
 __all__ = (
@@ -47,7 +45,7 @@ class UserBalance:
     Dataclass representing the balance of a user from the API.
 
     .. note::
-        The ``total``, ``bank`` and ``cash`` attributes *may* be a float if set to infinity (positive or negative).
+        The ``total``, ``bank`` and ``cash`` attributes *may* be a :class:`float` if set to infinity (positive or negative).
 
     Attributes
     ----------
@@ -61,7 +59,7 @@ class UserBalance:
         The user's unique ID.
     guild_id: :class:`int`
         The user's guild's unique ID.
-    rank : :class:`int`
+    rank: :class:`int`
         The rank of the user in the guild according to query parameters.
     """
 
@@ -104,16 +102,16 @@ class Guild:
 
     Attributes
     ----------
-        id: :class:`int`
-            The guild's unique ID.
-        name: :class:`str`
-            The guild's name.
-        owner_id: :class:`int`
-            The guild owner's unique ID.
-        member_count: :class:`int`
-            The guild's amount of members.
-        symbol: :class:`str`
-            The guild's currency symbol.
+    id: :class:`int`
+        The guild's unique ID.
+    name: :class:`str`
+        The guild's name.
+    owner_id: :class:`int`
+        The guild owner's unique ID.
+    member_count: :class:`int`
+        The guild's amount of members.
+    symbol: :class:`str`
+        The guild's currency symbol.
     """
 
     id: int
@@ -124,9 +122,8 @@ class Guild:
     symbol: str = field(compare=False)
     bucket: str = field(compare=False)
 
-    # don't document
-    channels: Optional[List[Any]] = field(compare=False, default_factory=[])
-    roles: Optional[List[Any]] = field(compare=False, default_factory=[])
+    # channels: Optional[List[Any]] = field(compare=False, default_factory=[])
+    # roles: Optional[List[Any]] = field(compare=False, default_factory=[])
 
     def __post_init__(self):
         self.id = int(self.id)

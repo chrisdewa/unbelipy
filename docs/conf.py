@@ -34,6 +34,17 @@ extensions = [
     'sphinx.ext.napoleon'
 ]
 
+# Autodoc settings
+autodoc_typehints = "description"
+
+# Napoleon settings
+napolean_numpy_docstring = True
+napoleon_include_init_with_doc = False
+napoleon_include_private_with_doc = False
+napoleon_use_admonition_for_examples = False
+napoleon_use_admonition_for_notes = False
+napoleon_use_admonition_for_references = False
+
 # For mapping short alias names
 extlinks = {
     'issue': ('https://github.com/chrisdewa/unbelipy/issues/%s', 'GH-'),
@@ -45,14 +56,6 @@ intersphinx_mapping = {
     'py': ('https://docs.python.org/3', None),
     'aio': ('https://docs.aiohttp.org/en/stable/', None)
 }
-
-# Napoleon settings
-napolean_numpy_docstring = True
-napoleon_include_init_with_doc = False
-napoleon_include_private_with_doc = False
-napoleon_use_admonition_for_examples = False
-napoleon_use_admonition_for_notes = False
-napoleon_use_admonition_for_references = False
 
 source_suffix = '.rst'
 
@@ -69,12 +72,20 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # -- Options for HTML output -------------------------------------------------
 
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-#
+# HTML and Theme configuration
 html_theme = 'sphinx_book_theme'
+html_theme_options = {
+    'icon_links': [
+        {
+            'name': 'Github',
+            'url': 'https://github.com/chrisdewa/unbelipy',
+            'icon': 'fab fa-github-square',
+            'type': 'fontawesome'
+        }
+    ]
+}
 
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+html_css_files = [
+    'css/custom.css'
+]

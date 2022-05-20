@@ -1,8 +1,9 @@
 .. currentmodule:: unbelipy
 
-API Reference
-=============
-
 Client
-------
+======
+
+UnbeliClient
+------------
 .. autoclass:: UnbeliClient
+    :members:
