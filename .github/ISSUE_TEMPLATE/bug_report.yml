@@ -15,9 +15,9 @@ body:
       label: Reproduction steps
       description: Detailed steps to reproduce the bug. This can also be a code snippet.
       value: >
-      1. 
-      2. 
-      3. 
+        1. 
+        2. 
+        3. 
     validations:
       required: true
   
