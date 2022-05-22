@@ -1,0 +1,58 @@
+name: Bug report
+description: Report a bug with the library, which you have found!
+labels: ["bug"]
+
+body:
+  - type: input
+  attributes:
+    label: Summary
+    description: A quick summary of your bug report, to tell us what it is about.
+  validations:
+    required: true
+
+  - type: textarea
+  attributes:
+    label: Reproduction steps
+    description: Detailed steps to reproduce the bug. This can also be a code snippet.
+    value: |
+    1. 
+    2. 
+    3. 
+  validations:
+    required: true
+  
+  - type: textarea
+  attributes:
+    label: Expected result
+    description: What you expected should have happened.
+  validations:
+    required: true
+  
+  - type: textarea
+  attributes:
+    label: Actual result
+    description: What actually happened. You may provide a traceback, if any.
+  validations:
+    required: true
+  
+  - type: textarea
+  attributes:
+    label: System information
+    description: Run `python -m unbelipy -v` in your terminal, and paste the result below.
+  validations:
+    required: true
+  
+  - type: checkboxes
+  attributes:
+    label: Checklist
+    description: Make sure to tick the following boxes before you submit this bug report!
+    options:
+      - label: I have searched the entire issue tracker, and have ensured this is not a duplicate.
+        required: true
+      - label: I have removed any sensitive information, such as my Application Token, if visible.
+        required: true
+  
+  - type: textarea
+  attributes:
+    label: Additional information
+    description: Any extra info, or images you would like to add-on.

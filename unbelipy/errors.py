@@ -1,59 +1,106 @@
+"""
+MIT License
 
-class UnbError(Exception):
+Copyright (c) 2021 ChrisDewa
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
+from __future__ import annotations
+
+__all__ = (
+    "UnbException",
+    "HTTPException",
+    "BadRequest",
+    "Unauthorized",
+    "Forbidden",
+    "NotFound",
+    "TooManyRequests",
+    "InternalServerError",
+    "UnknownException"
+)
+
+class UnbException(Exception):
+    """Base exception class for unbelipy."""
+
     pass
 
+class HTTPException(UnbException):
+    """The exception that is raised when a HTTP request has failed.
+    
+    This is a subclass of :exc:`UnbException`.
+    """
 
-class ResponseError(UnbError):
     pass
 
+class BadRequest(HTTPException):
+    """Exception that is raised when the response' status code is 400.
+    
+    This inherits from :exc:`HTTPException`.
+    """
 
-class BadRequest(ResponseError):
     pass
 
+class Unauthorized(HTTPException):
+    """Exception that is raised when the response' status code is 401.
+    
+    This inherits from :exc:`HTTPException`.
+    """
 
-class Unauthorized(ResponseError):
     pass
 
+class Forbidden(HTTPException):
+    """Exception that is raised when the response' status code is 403.
+    
+    This inherits from :exc:`HTTPException`.
+    """
 
-class Forbidden(ResponseError):
     pass
 
+class NotFound(HTTPException):
+    """Exception that is raised when the response' status code is 404.
+    
+    This inherits from :exc:`HTTPException`.
+    """
 
-class NotFound(ResponseError):
     pass
 
+class TooManyRequests(HTTPException):
+    """Exception that is raised when the response' status code is 429.
+    
+    This inherits from :exc:`HTTPException`.
+    """
 
-class TooManyRequests(ResponseError):
     pass
 
+class InternalServerError(HTTPException):
+    """Exception that is raised when the response' status code is 401.
+    
+    This inherits from :exc:`HTTPException`.
+    """
 
-class InternalServerError(ResponseError):
     pass
 
+class UnknownException(UnbException):
+    """The exception that is raised when unknown data is received from the API.
+    
+    This is a subclass of :exc:`UnbException`.
+    """
 
-class UnknownError(UnbError):
     pass
-
-
-api_errors = {
-    400: BadRequest,
-    401: Unauthorized,
-    403: Forbidden,
-    429: TooManyRequests,
-    500: InternalServerError
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
