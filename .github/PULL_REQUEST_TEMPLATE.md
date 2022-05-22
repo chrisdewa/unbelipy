@@ -4,7 +4,7 @@
 
 ## Checklist
 
-<!-- Put an X incide [ ] to check it. E.g.: [x] -->
+<!-- Put an X inside [ ] to check it. E.g.: [x] -->
 
 - [ ] I have ensured that tests were runned on any code changes.
     - [ ] I have updated the documentation to reflect the changes.
