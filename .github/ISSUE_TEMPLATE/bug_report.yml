@@ -14,7 +14,7 @@ body:
     attributes:
       label: Reproduction steps
       description: Detailed steps to reproduce the bug. This can also be a code snippet.
-      value: |
+      value: >
       1. 
       2. 
       3. 
