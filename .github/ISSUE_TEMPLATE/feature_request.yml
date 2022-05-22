@@ -4,35 +4,35 @@ labels: ["enhancement"]
 
 body:
   - type: input
-  attributes:
-    label: Summary
-    description: A quick summary of your request, to tell us what it is about.
-  validations:
-    required: true
+    attributes:
+      label: Summary
+      description: A quick summary of your request, to tell us what it is about.
+    validations:
+      required: true
 
   - type: textarea
-  attributes:
-    label: What is this for and why is it needed?
-    description: An explanation of why this feature should be implemented. What problem(s) would it potentially solve?
-  validations:
-    required: true
+    attributes:
+      label: What is this for and why is it needed?
+      description: An explanation of why this feature should be implemented. What problem(s) would it potentially solve?
+    validations:
+      required: true
   
   - type: textarea
-  attributes:
-    label: Ideal solution
-    description: What is your ideal solution to this problem?
-  validations:
-    required: true
+    attributes:
+      label: Ideal solution
+      description: What is your ideal solution to this problem?
+    validations:
+      required: true
 
   - type: checkboxes
-  attributes:
-    label: Checklist
-    description: Make sure to tick the following boxes before you submit this bug report!
-    options:
-      - label: I have searched the entire issue tracker, and have ensured this is not a duplicate.
-        required: true
+    attributes:
+      label: Checklist
+      description: Make sure to tick the following boxes before you submit this bug report!
+      options:
+        - label: I have searched the entire issue tracker, and have ensured this is not a duplicate.
+          required: true
   
   - type: textarea
-  attributes:
-    label: Additional information
-    description: Any extra info, or images you would like to add-on.
+    attributes:
+      label: Additional information
+      description: Any extra info, or images you would like to add-on.
