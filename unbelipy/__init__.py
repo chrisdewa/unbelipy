@@ -35,3 +35,5 @@ from .objects import (
 from .rate_limits import *
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
+
+del logging
