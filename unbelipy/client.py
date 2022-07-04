@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import logging
 import asyncio
+import atexit
 from typing import (
     Any,
     Union, 
@@ -56,6 +57,10 @@ API_ERRORS = {
     429: TooManyRequests,
     500: InternalServerError
 }
+
+def _program_close_session(session: ClientSession):
+    if not session.closed:
+        asyncio.get_event_loop().run_until_complete(session.close())
 
 def _process_bal(
     response_data: Dict[str, Any], 
@@ -513,7 +518,8 @@ class UnbeliClient:
         """Ensures theres an open ``ClientSession``. If it does not exist or it's closed a new one is created.
         """
         if not self._session or self._session.closed:
-            self._session = ClientSession()
+            self._session = cs = ClientSession()
+            atexit.register(_program_close_session, cs)
     
     async def generate_new_session(self, session: Optional[ClientSession] = None):
         """ Generates a new ``ClientSession`` for the client.
@@ -524,7 +530,8 @@ class UnbeliClient:
             The session to use with the client.
         """
         await self.close_session()
-        self._session = session or ClientSession()
+        self._session = cs = session or ClientSession()
+        atexit.register(_program_close_session, cs)
     
     def __del__(self):
         asyncio.get_event_loop().run_until_complete(self.close_session())
