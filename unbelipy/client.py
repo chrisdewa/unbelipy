@@ -196,15 +196,14 @@ class UnbeliClient:
         }
         self._prevent_rate_limits: bool = prevent_rate_limits
         self._retry_rate_limits: bool = retry_rate_limits
-        self._session: ClientSession = session or ClientSession()
+        self._session: Union[ClientSession, None] = session
 
         self.rate_limits: ClientRateLimits = ClientRateLimits(prevent_rate_limits=prevent_rate_limits)
     
-    async def close(self) -> None:
+    async def close_session(self) -> None:
         """Closes the current session."""
-        if self._session and isinstance(self._session, ClientSession):
+        if self._session and isinstance(self._session, ClientSession) and not self._session.closed:
             await self._session.close()
-        return
 
     async def get_permissions(
         self, 
@@ -510,17 +509,25 @@ class UnbeliClient:
             bucket_handler = self.rate_limits.buckets[bucket] = BucketHandler(bucket=bucket)
         return bucket_handler
 
-    async def _generate_session(self) -> ClientSession:
-        """Generates a ``ClientSession`` if it does not exist.
-        
-        Returns:
-            ClientSession
-                The user-provided or newly generated session.
+    async def _ensure_session(self):
+        """Ensures theres an open ``ClientSession``. If it does not exist or it's closed a new one is created.
         """
-
-        if not self._session:
+        if not self._session or self._session.closed:
             self._session = ClientSession()
-        return self._session
+    
+    async def generate_new_session(self, session: Optional[ClientSession] = None):
+        """ Generates a new ``ClientSession`` for the client.
+
+        Parameters
+        ----------
+        session Optional[:class:`ClientSession`]
+            The session to use with the client.
+        """
+        await self.close_session()
+        self._session = session or ClientSession()
+    
+    def __del__(self):
+        asyncio.get_event_loop().run_until_complete(self.close_session())
 
     async def _request(
         self,
@@ -581,6 +588,8 @@ class UnbeliClient:
 
         bucket_handler: BucketHandler = self._get_bucket_handler(bucket)
         bucket_handler.prevent_429 = self._prevent_rate_limits
+
+        await self._ensure_session()
 
         async with self.rate_limits.global_limiter:
             async with bucket_handler as bh:
