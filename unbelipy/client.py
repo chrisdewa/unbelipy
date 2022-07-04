@@ -196,7 +196,7 @@ class UnbeliClient:
         }
         self._prevent_rate_limits: bool = prevent_rate_limits
         self._retry_rate_limits: bool = retry_rate_limits
-        self._session: Optional[ClientSession] = session
+        self._session: ClientSession = session or ClientSession()
 
         self.rate_limits: ClientRateLimits = ClientRateLimits(prevent_rate_limits=prevent_rate_limits)
     
