@@ -69,7 +69,7 @@ async def main():
     guild_leaderboard = await client.get_guild_leaderboard(guild_id)
     user_balance = await client.get_user_balance(guild_id, member_id)
     await client.edit_user_balance(guild_id, member_id, cash='5') # adds 5 to the user's cash
-    await client.set_user_balance(guild_id, member_id, cash='5') # sets the user cash to 5
+    await client.set_user_balance(guild_id, member_id, cash='5') # sets the user's cash to 5
 ```
 
 [check out some examples](https://github.com/chrisdewa/unbelipy/tree/master/examples) in this repository!
