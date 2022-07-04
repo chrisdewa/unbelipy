@@ -606,7 +606,12 @@ class UnbeliClient:
                             return response_data['permissions']
 
                         elif caller == 'get_guild':
-                            response_data['bucket'] = bucket
+                            response_data['bucket'] = bucket                     
+                            # a change in the API adds a few empty fields to the response (vanity_code, roles and channels)
+                            response_data = {
+                                key: value for key, value in response_data.items()
+                                if key in ['id', 'name', 'icon', 'owner_id', 'member_count', 'symbol', 'bucket']
+                            }
                             return Guild(**response_data)
 
                 except TooManyRequests as E:

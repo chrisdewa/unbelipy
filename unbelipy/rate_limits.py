@@ -44,7 +44,7 @@ class BucketHandler:
     """
     Handles bucket-specific rate limits.
     """
-
+    # these don't look like they should be class attributes...
     limit: int = None
     remaining: int = None
     reset: datetime = None
