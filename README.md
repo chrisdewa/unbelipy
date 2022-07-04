@@ -10,6 +10,7 @@
 Asynchronous wrapper for UnbelievaBoat's API written in Python.
 
 ## Characteristics
+
 - Easy to use
 - Full error handling
 - Type hinted readable code
@@ -17,43 +18,71 @@ Asynchronous wrapper for UnbelievaBoat's API written in Python.
 - Fully Asynchronous
 
 ## Note
+
 This wrapper has not been declared to be official by the UnbelievaBoat developers. Any internal library issues/feature requests are to be directed here.
 
 ## Project status
+
 Early beta stage. It's not yet production ready.  
 Although most of the functionality is operational, rate limits are still being worked on.  
 
 ## Installation
+
 **Python 3.8 or above required, due to typehinting.**
 
 To install unbelipy from PyPI, use the following command:  
-```py
+
+```python
 pip install -U unbelipy
 ```
 
 Or to install from Github:  
-```py
+
+```python
 pip install -U git+https://github.com/chrisdewa/unbelipy/
 ```
 
 ## Dependencies
+
 The following libraries will be needed and automatically installed with unbelipy:  
+
 - [aiohttp](https://github.com/aio-libs/aiohttp/) - async requests
 - [aiolimiter](https://github.com/mjpieters/aiolimiter/) - implementation of async rate limiter
 
 ## Feature Requests
+
 For feature requests, please [open a Pull Request](https://github.com/chrisdewa/unbelipy/pulls) with detailed instructions.  
 Likewise, if you encounter any issues, you may [create a new Issue](https://github.com/chrisdewa/unbelipy/issues).
 
 ## Examples
-To start off, you may [check out some examples](https://github.com/chrisdewa/unbelipy/tree/master/examples) in this repository!
+
+```python
+from unbelipy import UnbeliClient
+
+client = UnbeliClient(token='Unbelievaboats token generated from https://unbelievaboat.com/applications/')
+guild_id: int = ...
+member_id: int = ...
+
+async def main():
+    perms = await client.get_permissions(guild_id)
+    guild = await client.get_guild(guild_id)
+    guild_leaderboard = await client.get_guild_leaderboard(guild_id)
+    user_balance = await client.get_user_balance(guild_id, member_id)
+    await client.edit_user_balance(guild_id, member_id, cash='5') # adds 5 to the user's cash
+    await client.set_user_balance(guild_id, member_id, cash='5') # sets the user cash to 5
+```
+
+[check out some examples](https://github.com/chrisdewa/unbelipy/tree/master/examples) in this repository!
 
 ## Links
+
 - [Documentation](https://unbelipy.readthedocs.io/en/latest/)
 
 ## Contact
+
 As of now, there is no support server for this library.
 However, you may contact the following people on Discord:
+
 - [ChrisDewa#4552](https://discord.com/users/365957462333063170)
 - [invalid-user#1119](https://discord.com/users/714731543309844561)
 
