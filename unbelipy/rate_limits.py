@@ -80,7 +80,7 @@ class BucketHandler:
             setattr(self, k, v)
 
     async def __aenter__(self):
-        self.cond = self.cond or asyncio.Condition(loop=asyncio.get_running_loop())
+        self.cond = self.cond or asyncio.Condition()
         if self.prevent_429 is True:
             await self.cond.acquire()
             if self.remaining is not None and self.remaining == 0:
