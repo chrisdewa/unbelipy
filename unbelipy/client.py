@@ -238,7 +238,7 @@ class UnbeliClient:
         if (t := type(guild_id)) is not int:
             raise TypeError(f"guild_id must be an int but {t} was received")
 
-        method = 'GET',
+        method = 'GET'
         path = f'/applications/@me/guilds/{guild_id}'
         bucket = method + path
 
