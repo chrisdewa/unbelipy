@@ -6,6 +6,13 @@ Changelog
 This page outlines the changes in different versions of the project.
 Some verions *may* be breaking changes, which requires you to update your code as soon as possible.
 
+v2.0.1b
+-------
+- General Bugfixes 
+- Minor general improvements
+- Documentation updates
+
+
 v2.0.0b
 -------
 .. important::
