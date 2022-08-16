@@ -14,6 +14,7 @@ Contents
    :titlesonly:
    :maxdepth: 2
 
+   getting_started
    client
    objects
    exceptions
