@@ -8,7 +8,7 @@ Unbelipy is a simple library to interact with UmbelievaBoat's API asynchronously
 To start out generate your app token `here <https://unbelievaboat.com/applications>`_.
 Don't forget to also authorize your app in your servers.
 
-To use, first import :class:`UnbeliClient` from unbelipy and isntantiate the client with your UnbelievaBoat API's token.
+To use, first import :class:`UnbeliClient` from unbelipy and instantiate the client with your UnbelievaBoat API's token.
 The client has these public methods:
 
 * :meth:`UnbeliClient.get_permissions` -> Returns the permissions for the app in the given server.
