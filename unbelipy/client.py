@@ -24,9 +24,10 @@ SOFTWARE.
 
 from __future__ import annotations
 
-import logging
+# import logging
 import asyncio
 import atexit
+# from pprint import pprint
 from typing import (
     Any,
     Union, 
@@ -37,6 +38,7 @@ from typing import (
 )
 from inspect import stack
 from json import dumps
+from urllib.parse import urlencode
 
 from aiohttp import ClientSession, ClientResponse
 
@@ -60,7 +62,11 @@ API_ERRORS = {
 
 def _program_close_session(session: ClientSession):
     if not session.closed:
-        asyncio.get_event_loop().run_until_complete(session.close())
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+        loop.run_until_complete(session.close())
 
 def _process_bal(
     response_data: Dict[str, Any], 
@@ -324,7 +330,7 @@ class UnbeliClient:
         if offset and page:
             raise TypeError('offset cannot be used with the page parameter')
 
-        params: Optional[List[str]] = []
+        params: dict[str, Any] = {}
 
         if sort is not None:
             if (t := type(sort)) is not str:
@@ -332,19 +338,24 @@ class UnbeliClient:
             elif sort not in ['cash', 'bank', 'total']:
                 raise ValueError(f'sort can only be "cash", "bank" or "total" but was "{sort}"')
             else:
-                params.append(f"sort={sort}")
+                params['sort'] = sort
 
-        for arg in (d := {'limit': limit, 'offset': offset, 'page': page}):
-            if d[arg] is not None:
-                if (t := type(d[arg])) is not int:
-                    raise TypeError(f'{arg} can only be type int but was {t}')
-                else:
-                    params.append(f"&{arg}={d[arg]}")
+        for key, item in (('limit', limit), ('offset', offset), ('page', page)):
+            if item is None: 
+                continue
+            elif (t := type(item)) is not int:
+                raise TypeError(f'{item} can only be type int but was "{t}"')
+            else:
+                params[key] = item
+
 
         method = 'GET'
-        base_path = f'/guilds/{guild_id}/users'
-
-        query_path = base_path + "".join(params)
+        base_path = f'/guilds/{guild_id}/users/'
+        query_path = base_path
+        
+        if params:
+            query_path += '?' + urlencode(params)
+        
         bucket = method + base_path
 
         return await self._request(
@@ -532,9 +543,6 @@ class UnbeliClient:
         await self.close_session()
         self._session = cs = session or ClientSession()
         atexit.register(_program_close_session, cs)
-    
-    def __del__(self):
-        asyncio.get_event_loop().run_until_complete(self.close_session())
 
     async def _request(
         self,
