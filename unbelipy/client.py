@@ -616,7 +616,7 @@ class UnbeliClient:
                 try:
                     if await self._check_response(response=response, bucket=bucket):
 
-                        if caller in ['set_user_balance', 'set_user_balance', 'get_user_balance']:
+                        if caller in ['set_user_balance', 'edit_user_balance', 'get_user_balance']:
                             return _process_bal(response_data, guild_id, bucket)
 
                         elif caller == 'get_guild_leaderboard':
