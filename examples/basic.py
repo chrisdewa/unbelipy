@@ -15,7 +15,7 @@ unbeliclient = UnbeliClient(token=UNB_API_TOKEN)
 # Performance is similar either ways but having `retry_rate_limits` set to True may result in multiple 429 errors.
 
 guild_id = 693980879181053994 
-member_id = 365957462333063170
+user_id = 365957462333063170
 
 async def main() -> None:
     # GET guild information
@@ -29,14 +29,14 @@ async def main() -> None:
     # GET user balance
     user_balance = await unbeliclient.get_user_balance(
         guild_id=guild_id, 
-        user_id=member_id
+        user_id=user_id
     )
     print(f"User balance: ", user_balance)
 
     # PATCH user balance (increase/decrease values)
     edited_balance = await unbeliclient.edit_user_balance(
         guild_id=guild_id, 
-        user_id=member_id,
+        user_id=user_id,
         cash=500,
         reason="showing off PATCH method"
     )
@@ -46,7 +46,7 @@ async def main() -> None:
     # PUT user balance (set to xxx value)
     new_balance = await unbeliclient.set_user_balance(
         guild_id=guild_id,
-        user_id=member_id,
+        user_id=user_id,
         cash=-500,
         reason="showing off PUT method"
     )
