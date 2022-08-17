@@ -20,10 +20,11 @@ Contents
    exceptions
    changelog
 
-.. Links
-.. -----
-.. * `Repository <https://github.com/chrisdewa/unbelipy>`_
-..    * `Create a new Issue <https://github.com/chrisdewa/unbelipy/issues/new/choose>`_
+Links
+-----
+* `Repository <https://github.com/chrisdewa/unbelipy>`_
+* `Create a new Issue <https://github.com/chrisdewa/unbelipy/issues/new/choose>`_
+* `Generate UnbelievaBoat Token and Authorize apps <https://unbelievaboat.com/applications>`_
 
 Indices and tables
 ------------------
